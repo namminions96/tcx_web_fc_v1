@@ -1,0 +1,80 @@
+# Build file .ipa CHƯA KÝ cho iPhone thật, để tự cài bằng Sideloadly (Windows) với Apple ID miễn phí.
+# Không cần tài khoản Apple Developer. App cài kiểu này hết hạn sau 7 ngày, cài lại là dùng tiếp.
+# Chạy tay: tab Actions > "iOS - File IPA cài bằng Sideloadly" > Run workflow (cũng tự chạy khi web đổi).
+# Tải file ở mục Artifacts > FC-Vui-Ve-ipa, giải nén 1 lần ra FC-Vui-Ve.ipa.
+name: iOS - File IPA cài bằng Sideloadly
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'config.js'
+      - 'mobile-ios/**'
+      - '.github/workflows/ios-ipa-sideload.yml'
+
+jobs:
+  build:
+    runs-on: macos-15
+    defaults:
+      run:
+        working-directory: mobile-ios
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Cài thư viện
+        run: bash scripts/ci-run.sh npm install
+
+      - name: Copy web vào app
+        run: npm run build
+
+      - name: Tạo dự án Xcode (nếu chưa có)
+        run: |
+          if [ ! -d ios ]; then bash scripts/ci-run.sh npx cap add ios; fi
+
+      - name: Tạo icon + màn hình chờ
+        run: |
+          brew install librsvg
+          mkdir -p assets
+          rsvg-convert -w 1024 -h 1024 -b '#070a13' assets-src/icon.svg -o assets/icon-only.png
+          cp assets/icon-only.png assets/icon-foreground.png
+          rsvg-convert -w 2732 -h 2732 -b '#070a13' assets-src/icon.svg -o assets/splash.png
+          cp assets/splash.png assets/splash-dark.png
+          bash scripts/ci-run.sh npm run assets
+
+      - name: Đồng bộ web + plugin vào Xcode
+        run: bash scripts/ci-run.sh npx cap sync ios
+
+      - name: Cấu hình Info.plist
+        run: |
+          PLIST=ios/App/App/Info.plist
+          /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName FC Vui Vẻ" $PLIST || \
+            /usr/libexec/PlistBuddy -c "Add :CFBundleDisplayName string FC Vui Vẻ" $PLIST
+          /usr/libexec/PlistBuddy -c "Delete :UISupportedInterfaceOrientations" $PLIST 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :UISupportedInterfaceOrientations array" $PLIST
+          /usr/libexec/PlistBuddy -c "Add :UISupportedInterfaceOrientations:0 string UIInterfaceOrientationPortrait" $PLIST
+
+      - name: Build cho iPhone thật (chưa ký)
+        run: |
+          bash scripts/ci-run.sh xcodebuild -workspace ios/App/App.xcworkspace -scheme App -configuration Release \
+            -sdk iphoneos -destination 'generic/platform=iOS' \
+            -derivedDataPath $RUNNER_TEMP/dd \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            TARGETED_DEVICE_FAMILY=1 MARKETING_VERSION=1.0.${{ github.run_number }} \
+            CURRENT_PROJECT_VERSION=${{ github.run_number }} \
+            build
+          APP=$(find $RUNNER_TEMP/dd/Build/Products/Release-iphoneos -maxdepth 1 -name '*.app' | head -1)
+          mkdir -p $RUNNER_TEMP/ipa/Payload
+          cp -R "$APP" $RUNNER_TEMP/ipa/Payload/
+          (cd $RUNNER_TEMP/ipa && zip -qry $RUNNER_TEMP/FC-Vui-Ve.ipa Payload)
+          ls -la $RUNNER_TEMP/FC-Vui-Ve.ipa
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: FC-Vui-Ve-ipa
+          path: ${{ runner.temp }}/FC-Vui-Ve.ipa

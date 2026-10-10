@@ -22,6 +22,18 @@ Appetize là máy iPhone ảo chạy trong trình duyệt. Thử được hết 
 
 Không muốn tạo token? Bỏ qua bước 2–3, chạy workflow xong thì tải file **App-simulator** ở mục *Artifacts* về, giải nén ra file `App-simulator.zip` bên trong, rồi kéo thả lên **appetize.io/upload**.
 
+## 0b. Cài thử lên iPhone thật bằng Sideloadly (miễn phí, chưa cần tài khoản 99 USD)
+
+1. GitHub → tab **Actions → "iOS - File IPA cài bằng Sideloadly"**: workflow này tự chạy mỗi khi web thay đổi, hoặc bấm **Run workflow** để chạy tay.
+2. Mở lượt chạy có dấu ✅ → mục **Artifacts** → tải **FC-Vui-Ve-ipa** → giải nén 1 lần ra file `FC-Vui-Ve.ipa`.
+3. Cài **iTunes** (bản tải từ apple.com, không dùng bản Microsoft Store) và **Sideloadly** (sideloadly.io) trên máy tính.
+4. Cắm iPhone vào máy tính bằng cáp, bấm **Tin cậy** trên iPhone.
+5. Mở Sideloadly: kéo `FC-Vui-Ve.ipa` vào, nhập Apple ID, bấm **Start** (nhập mật khẩu Apple ID / mã xác thực khi được hỏi).
+6. Trên iPhone: **Cài đặt → Cài đặt chung → VPN & Quản lý thiết bị** → chọn Apple ID của bạn → **Tin cậy**.
+7. iOS 16 trở lên: bật **Cài đặt → Quyền riêng tư & Bảo mật → Chế độ nhà phát triển** (máy sẽ khởi động lại).
+
+Giới hạn khi dùng Apple ID miễn phí: app **hết hạn sau 7 ngày** (cài lại bằng Sideloadly là dùng tiếp, dữ liệu vẫn trên Google Sheet nên không mất gì), mỗi Apple ID chỉ cài được tối đa 3 app kiểu này, và chỉ dùng cho máy của chính bạn – muốn phát cho cả đội thì cần TestFlight/App Store.
+
 ## 1. Chuẩn bị (1 lần)
 
 | Cần | Ghi chú |
