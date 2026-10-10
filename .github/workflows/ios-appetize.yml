@@ -35,7 +35,7 @@ jobs:
 
       - name: Tạo dự án Xcode (nếu chưa có)
         run: |
-          if [ ! -d ios ]; then bash scripts/ci-run.sh npx cap add ios --packagemanager SPM; fi
+          if [ ! -d ios ]; then bash scripts/ci-run.sh npx cap add ios; fi
 
       - name: Tạo icon + màn hình chờ
         run: |
@@ -52,7 +52,7 @@ jobs:
 
       - name: Build cho máy giả lập
         run: |
-          bash scripts/ci-run.sh xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Debug \
+          bash scripts/ci-run.sh xcodebuild -workspace ios/App/App.xcworkspace -scheme App -configuration Debug \
             -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
             -derivedDataPath $RUNNER_TEMP/dd \
             ONLY_ACTIVE_ARCH=NO CODE_SIGNING_ALLOWED=NO TARGETED_DEVICE_FAMILY=1 \

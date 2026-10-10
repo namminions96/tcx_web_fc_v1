@@ -94,7 +94,7 @@ Nếu chỉ sửa **dữ liệu** (thành viên, lịch, thu chi) thì **không*
 cd mobile-ios
 npm install
 npm run build
-npx cap add ios --packagemanager SPM   # lần đầu
+npx cap add ios                        # lần đầu (cần CocoaPods)
 npx cap sync ios
 npx cap open ios                       # mở Xcode, chọn iPhone giả lập và bấm ▶
 ```

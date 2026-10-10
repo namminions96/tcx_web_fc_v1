@@ -37,7 +37,7 @@ jobs:
 
       - name: Tạo dự án Xcode (nếu chưa có)
         run: |
-          if [ ! -d ios ]; then bash scripts/ci-run.sh npx cap add ios --packagemanager SPM; fi
+          if [ ! -d ios ]; then bash scripts/ci-run.sh npx cap add ios; fi
 
       - name: Tạo icon + màn hình chờ
         run: |
@@ -72,7 +72,7 @@ jobs:
 
       - name: Build (archive)
         run: |
-          bash scripts/ci-run.sh xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release \
+          bash scripts/ci-run.sh xcodebuild -workspace ios/App/App.xcworkspace -scheme App -configuration Release \
             -destination 'generic/platform=iOS' -archivePath $RUNNER_TEMP/App.xcarchive \
             -allowProvisioningUpdates \
             -authenticationKeyPath ~/private_keys/AuthKey_${ASC_KEY_ID}.p8 \
