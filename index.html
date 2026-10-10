@@ -1857,6 +1857,8 @@
       .stat-details .lbl { font-size: 12px; }
       .stat-details .num { font-size: 18px; }
       .dashboard-grid { gap: 14px; margin-bottom: 16px; }
+      /* Giao dịch gần đây xuống dưới Kết quả gần đây */
+      .dashboard-grid > .dash-tx-card { order: 2; }
 
       /* ---- Bảng -> danh sách thẻ ---- */
       .table-container { overflow: visible; }
@@ -2191,7 +2193,7 @@
             </div>
 
             <!-- RECENT TRANSACTIONS -->
-            <div class="glass-card">
+            <div class="glass-card dash-tx-card">
               <div class="card-header">
                 <h3><i class="fa-solid fa-receipt"></i> Giao Dịch Gần Đây</h3>
                 <button class="btn btn-secondary btn-sm" onclick="switchTab('ledger')">Xem Tất Cả</button>
