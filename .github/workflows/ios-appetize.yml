@@ -6,6 +6,13 @@ name: iOS - Chạy thử trên Appetize
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'config.js'
+      - 'mobile-ios/**'
+      - '.github/workflows/ios-appetize.yml'
 
 jobs:
   build:
@@ -14,21 +21,21 @@ jobs:
       run:
         working-directory: mobile-ios
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
 
       - name: Cài thư viện
-        run: npm install
+        run: bash scripts/ci-run.sh npm install
 
       - name: Copy web vào app
         run: npm run build
 
       - name: Tạo dự án Xcode (nếu chưa có)
         run: |
-          if [ ! -d ios ]; then npx cap add ios --packagemanager SPM; fi
+          if [ ! -d ios ]; then bash scripts/ci-run.sh npx cap add ios --packagemanager SPM; fi
 
       - name: Tạo icon + màn hình chờ
         run: |
@@ -38,14 +45,14 @@ jobs:
           cp assets/icon-only.png assets/icon-foreground.png
           rsvg-convert -w 2732 -h 2732 -b '#070a13' assets-src/icon.svg -o assets/splash.png
           cp assets/splash.png assets/splash-dark.png
-          npm run assets
+          bash scripts/ci-run.sh npm run assets
 
       - name: Đồng bộ web + plugin vào Xcode
-        run: npx cap sync ios
+        run: bash scripts/ci-run.sh npx cap sync ios
 
       - name: Build cho máy giả lập
         run: |
-          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Debug \
+          bash scripts/ci-run.sh xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Debug \
             -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
             -derivedDataPath $RUNNER_TEMP/dd \
             ONLY_ACTIVE_ARCH=NO CODE_SIGNING_ALLOWED=NO TARGETED_DEVICE_FAMILY=1 \
