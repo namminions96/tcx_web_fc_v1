@@ -1754,6 +1754,170 @@
       opacity: 1;
     }
   </style>
+  <style>
+    /* =====================================================================
+       GIAO DIỆN ĐIỆN THOẠI (≤ 850px): thanh tab dưới đáy, tiêu đề gọn,
+       menu "Thêm" dạng bottom sheet, bảng chuyển thành thẻ.
+       env(safe-area-inset-*) = 0 trên web thường, có giá trị trong app iPhone.
+       ===================================================================== */
+    .bottom-nav, #sheetBackdrop { display: none; }
+
+    @media (max-width: 850px) {
+      /* Chống tràn ngang: cột grid/flex không bị nội dung (bảng) ép giãn */
+      .wrapper, main.content, .view, .glass-card,
+      .dashboard-grid > *, .grid-stats > *, .view [style*="grid"] > * { min-width: 0; }
+      .view [style*="grid-template-columns: 1fr 1fr"] { grid-template-columns: 1fr !important; }
+
+      main.content {
+        padding: 14px 12px calc(84px + env(safe-area-inset-bottom));
+      }
+      .glass-card { padding: 16px; border-radius: 18px; }
+      .card-header { flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+      .card-header h3 { font-size: 16px; display: block; flex: 1 1 auto; min-width: 0; line-height: 1.35; }
+      .card-header h3 > i:first-child { margin-right: 6px; }
+
+      /* ---- Thanh tiêu đề ---- */
+      header.topbar {
+        height: calc(56px + env(safe-area-inset-top));
+        padding: env(safe-area-inset-top) 14px 0;
+        gap: 10px;
+        background: rgba(7, 10, 19, 0.88);
+      }
+      header.topbar > div:first-child { min-width: 0; flex: 1; gap: 0 !important; }
+      .mobile-toggle { display: none !important; }
+      .topbar-title { min-width: 0; }
+      .topbar-title h1 {
+        font-size: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      }
+      .topbar-title p { display: none; }
+      .topbar-actions { gap: 8px; flex-shrink: 0; }
+      .auth-btn {
+        width: 36px; height: 36px; padding: 0; justify-content: center;
+        font-size: 0; gap: 0; border-radius: 50%;
+      }
+      .auth-btn i { font-size: 14px; }
+      .fund-badge { padding: 6px 12px; gap: 0; border-radius: 99px; }
+      .fund-badge .label { display: none; }
+      .fund-badge .val { font-size: 14px; white-space: nowrap; }
+      .toast-msg { top: calc(12px + env(safe-area-inset-top)); right: 12px; left: 12px; }
+
+      /* ---- Thanh tab dưới đáy ---- */
+      .bottom-nav {
+        display: grid; grid-template-columns: repeat(5, 1fr);
+        position: fixed; left: 0; right: 0; bottom: 0; z-index: 95;
+        padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+        background: rgba(10, 15, 27, 0.92);
+        backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+        border-top: 1px solid var(--card-border);
+      }
+      .bnav-item {
+        display: flex; flex-direction: column; align-items: center; gap: 4px;
+        padding: 6px 0; border: 0; background: none; cursor: pointer;
+        color: var(--text-muted); font: 600 10.5px var(--font);
+        -webkit-tap-highlight-color: transparent;
+      }
+      .bnav-item i { font-size: 19px; transition: transform 0.2s ease; }
+      .bnav-item.active { color: var(--accent-emerald); }
+      .bnav-item.active i { transform: translateY(-1px) scale(1.08); }
+      #syncBanner { bottom: calc(64px + env(safe-area-inset-bottom)); }
+
+      /* ---- Menu "Thêm": sidebar thành bottom sheet ---- */
+      aside.sidebar {
+        top: auto; left: 0; right: 0; bottom: 0; width: 100%;
+        max-height: 82vh; overflow-y: auto; z-index: 110;
+        border-right: 0; border-top: 1px solid var(--card-border);
+        border-radius: 22px 22px 0 0;
+        padding: 10px 0 calc(12px + env(safe-area-inset-bottom));
+        transform: translateY(105%);
+        background: rgba(13, 20, 35, 0.98);
+      }
+      aside.sidebar::before {
+        content: ''; display: block; width: 40px; height: 5px; border-radius: 3px;
+        background: rgba(255, 255, 255, 0.2); margin: 0 auto 6px;
+      }
+      aside.sidebar.mobile-open { transform: translateY(0); }
+      aside.sidebar .brand { padding-top: 8px; padding-bottom: 8px; }
+      aside.sidebar .sidebar-footer { display: none; }
+      aside.sidebar .nav-menu { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+      aside.sidebar .nav-item { margin: 0; }
+      #sheetBackdrop {
+        display: block; position: fixed; inset: 0; z-index: 105;
+        background: rgba(0, 0, 0, 0.55); opacity: 0; pointer-events: none;
+        transition: opacity 0.25s ease;
+      }
+      #sheetBackdrop.open { opacity: 1; pointer-events: auto; }
+
+      /* ---- Tổng quan ---- */
+      .hero-banner { height: 190px; margin-bottom: 16px; border-radius: 18px; }
+      .hero-overlay { padding: 14px 16px; }
+      .hero-text h2 { font-size: 19px; }
+      .grid-stats { grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+      .stat-box { flex-direction: column; align-items: flex-start; gap: 10px; padding: 14px; }
+      .stat-icon { width: 38px; height: 38px; border-radius: 12px; font-size: 16px; }
+      .stat-details .lbl { font-size: 12px; }
+      .stat-details .num { font-size: 18px; }
+      .dashboard-grid { gap: 14px; margin-bottom: 16px; }
+
+      /* ---- Bảng -> danh sách thẻ ---- */
+      .table-container { overflow: visible; }
+      .table-container:has(.m-row) table,
+      .table-container:has(.m-row) tbody { display: block; }
+      .table-container:has(.m-row) thead { display: none; }
+      tr.m-row {
+        display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px;
+        padding: 12px 14px; margin-bottom: 8px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid var(--card-border); border-radius: 14px;
+      }
+      tr.m-row td { padding: 0; border: 0; background: none !important; font-size: 13px; }
+      tr.m-row .m-sub { font-size: 12px; color: var(--text-muted); }
+
+      /* Sổ thu chi: [nội dung | số tiền] / [ngày · người · loại | số dư] / [thao tác] */
+      tr.m-row.tx td:nth-child(1) { order: 3; }
+      tr.m-row.tx td:nth-child(2) { order: 5; }
+      tr.m-row.tx td:nth-child(3) { order: 1; flex: 1 1 calc(100% - 130px); min-width: 0; font-size: 14px; }
+      tr.m-row.tx td:nth-child(4) { order: 4; }
+      tr.m-row.tx td:nth-child(4)::before { content: '· '; }
+      tr.m-row.tx td:nth-child(5), tr.m-row.tx td:nth-child(6) { order: 2; font-size: 15px; white-space: nowrap; margin-left: auto; }
+      tr.m-row.tx-thu td:nth-child(6), tr.m-row.tx-chi td:nth-child(5) { display: none; }
+      tr.m-row.tx-thu td:nth-child(5)::before { content: '+'; }
+      tr.m-row.tx-chi td:nth-child(6)::before { content: '−'; }
+      tr.m-row.tx td:nth-child(7) { order: 6; margin-left: auto; font-size: 12px; color: var(--text-muted); font-weight: 600 !important; }
+      tr.m-row.tx td:nth-child(7)::before { content: 'Dư '; }
+      tr.m-row.tx td:nth-child(1), tr.m-row.tx td:nth-child(4) { font-size: 12px; color: var(--text-muted); }
+      tr.m-row.tx td:nth-child(8) { order: 7; width: 100%; }
+      tr.m-row.tx td:nth-child(8):empty { display: none; }
+
+      /* Giao dịch gần đây: [nội dung | số tiền] / [ngày] */
+      tr.m-row.dtx td:nth-child(2) { order: 1; flex: 1 1 calc(100% - 130px); min-width: 0; }
+      tr.m-row.dtx td:nth-child(4) { order: 2; white-space: nowrap; font-size: 14px; margin-left: auto; }
+      tr.m-row.dtx td:nth-child(1) { order: 3; width: 100%; font-size: 12px; color: var(--text-muted); }
+      tr.m-row.dtx td:nth-child(3) { display: none; }
+
+      /* Đóng quỹ tháng: [☑ tên | trạng thái] / [loại · mức] / [thực đóng | ghi chú] */
+      tr.m-row.mfee td:nth-child(1) { order: 1; }
+      tr.m-row.mfee td:nth-child(2) { order: 2; flex: 1 1 calc(100% - 170px); min-width: 0; font-size: 14px; }
+      tr.m-row.mfee td:nth-child(5) { order: 3; margin-left: auto; }
+      tr.m-row.mfee td:nth-child(3) { order: 4; margin-left: 30px; }
+      tr.m-row.mfee td:nth-child(4) { order: 5; flex: 1 1 auto; }
+      tr.m-row.mfee td:nth-child(6) { order: 6; flex: 1 1 40%; }
+      tr.m-row.mfee td:nth-child(7) { order: 7; flex: 1 1 50%; }
+      tr.m-row.mfee td:nth-child(6), tr.m-row.mfee td:nth-child(7) { margin-top: 6px; }
+      tr.m-row.mfee input.inline-input { width: 100% !important; }
+      body.user-mode tr.m-row.mfee td:nth-child(6),
+      body.user-mode tr.m-row.mfee td:nth-child(7) { display: none; }
+
+      /* Thành viên: [tên vị trí | trạng thái] / [loại · mức đóng] / [thao tác] */
+      tr.m-row.pl td:nth-child(1) { display: none; }
+      tr.m-row.pl td:nth-child(2) { order: 1; font-size: 14px; }
+      tr.m-row.pl td:nth-child(3) { order: 2; flex: 1 1 auto; }
+      tr.m-row.pl td:nth-child(6) { order: 3; }
+      tr.m-row.pl td:nth-child(4) { order: 4; }
+      tr.m-row.pl td:nth-child(5) { order: 5; font-size: 13px; flex: 1 1 auto; }
+      tr.m-row.pl td:nth-child(7) { order: 6; margin-left: auto; }
+      tr.m-row td[style*="text-align:right"] { text-align: left !important; }
+    }
+  </style>
 </head>
 
 <body>
@@ -1828,6 +1992,16 @@
       FC VUI VẺ &copy; 2026
     </div>
   </aside>
+
+  <!-- THANH TAB DƯỚI ĐÁY (chỉ hiện trên điện thoại) -->
+  <div id="sheetBackdrop" onclick="toggleSidebar(false)"></div>
+  <nav class="bottom-nav" id="bottomNav">
+    <button class="bnav-item active" data-btab="dashboard"><i class="fa-solid fa-house"></i>Tổng quan</button>
+    <button class="bnav-item" data-btab="vote"><i class="fa-solid fa-people-group"></i>Vote</button>
+    <button class="bnav-item" data-btab="monthly"><i class="fa-solid fa-calendar-check"></i>Quỹ tháng</button>
+    <button class="bnav-item" data-btab="ledger"><i class="fa-solid fa-book"></i>Thu chi</button>
+    <button class="bnav-item" data-btab="more"><i class="fa-solid fa-grip"></i>Thêm</button>
+  </nav>
 
   <!-- MAIN CONTAINER -->
   <div class="wrapper">
@@ -2888,8 +3062,12 @@
         document.getElementById('pageSub').textContent = titles[tabId][1];
       }
       if (tabId === 'vote') renderVote();
+      const mainTabs = ['dashboard', 'vote', 'monthly', 'ledger'];
+      document.querySelectorAll('.bnav-item').forEach(el => el.classList.toggle('active',
+        el.dataset.btab === (mainTabs.includes(tabId) ? tabId : 'more')));
       if (window.innerWidth <= 850) {
-        document.getElementById('sidebar').classList.remove('mobile-open');
+        toggleSidebar(false);
+        window.scrollTo(0, 0);
       }
     }
 
@@ -2897,9 +3075,18 @@
       item.addEventListener('click', () => switchTab(item.dataset.tab));
     });
 
-    function toggleSidebar() {
-      document.getElementById('sidebar').classList.toggle('mobile-open');
+    function toggleSidebar(force) {
+      const open = document.getElementById('sidebar').classList.toggle('mobile-open', force);
+      const backdrop = document.getElementById('sheetBackdrop');
+      if (backdrop) backdrop.classList.toggle('open', open);
     }
+
+    document.querySelectorAll('.bnav-item').forEach(item => {
+      item.addEventListener('click', () => {
+        if (item.dataset.btab === 'more') toggleSidebar();
+        else switchTab(item.dataset.btab);
+      });
+    });
 
     /* MODAL ENGINE */
     function openModal(html) {
@@ -3011,7 +3198,7 @@
       }).slice(0, 5);
 
       document.getElementById('dashRecentTx').innerHTML = recent.map(t => `
-    <tr>
+    <tr class="m-row dtx">
       <td>${txDateTimeLabel(t)}</td>
       <td><b>${escapeHtml(t.desc)}</b> <span style="font-size:11px; color:var(--text-muted);">(${escapeHtml(t.category)})</span></td>
       <td>${t.type === 'thu' ? '<span class="badge badge-success">Thu</span>' : '<span class="badge badge-danger">Chi</span>'}</td>
@@ -3514,7 +3701,7 @@
           ? `<button class="btn btn-sm" onclick="app.togglePlayerPause('${p.id}')" title="Đá lại, đóng quỹ từ tháng này"><i class="fa-solid fa-play"></i> Đá lại</button>`
           : `<button class="btn btn-secondary btn-sm" onclick="app.togglePlayerPause('${p.id}')" title="Tạm nghỉ, không cần đóng quỹ"><i class="fa-solid fa-pause"></i> Tạm nghỉ</button>`;
         return `
-      <tr style="${pause ? 'opacity: 0.6;' : ''}">
+      <tr class="m-row pl" style="${pause ? 'opacity: 0.6;' : ''}">
         <td>${idx + 1}</td>
         <td><b>${escapeHtml(p.name)}</b></td>
         <td><span class="pos-badge" style="color:${pos.color}; background:${pos.bg}; border:1px solid ${pos.border}; font-size:11px;">${pos.emoji} ${pos.name}</span></td>
@@ -3579,7 +3766,7 @@
         }
 
         return `
-      <tr style="${isChecked ? 'background: rgba(0, 0, 0, 0.4); opacity: 0.55; filter: grayscale(30%);' : ''}">
+      <tr class="m-row mfee" style="${isChecked ? 'background: rgba(0, 0, 0, 0.4); opacity: 0.55; filter: grayscale(30%);' : ''}">
         <td style="text-align: center;">
           <input type="checkbox" ${isChecked ? 'checked' : ''} class="admin-input"
                  style="width: 18px; height: 18px; cursor: pointer; accent-color: var(--accent-emerald);"
@@ -3640,7 +3827,7 @@
       tbody.innerHTML = list.map(t => {
         const balAfter = balMap[t.id] || 0;
         return `
-      <tr>
+      <tr class="m-row tx tx-${t.type}">
         <td>${txDateTimeLabel(t)}</td>
         <td><span class="badge badge-gray">${escapeHtml(t.category)}</span></td>
         <td><b>${escapeHtml(t.desc)}</b> ${t.note ? `<br><small style="color:var(--text-muted);">${escapeHtml(t.note)}</small>` : ''}</td>

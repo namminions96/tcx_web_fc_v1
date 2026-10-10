@@ -1,18 +1,6 @@
-/* Chỉ áp dụng trong app iPhone: chừa chỗ cho tai thỏ / Dynamic Island / thanh home */
-aside.sidebar {
-  padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
-}
-
-header.topbar {
-  height: calc(76px + env(safe-area-inset-top));
-  padding-top: env(safe-area-inset-top);
-  padding-left: max(16px, env(safe-area-inset-left));
-  padding-right: max(16px, env(safe-area-inset-right));
-}
-
+/* Chỉ áp dụng trong app iPhone. Phần chừa tai thỏ / thanh home đã nằm trong
+   khối "GIAO DIỆN ĐIỆN THOẠI" của index.html (dùng env(safe-area-inset-*)). */
 body {
-  padding-bottom: env(safe-area-inset-bottom);
   -webkit-tap-highlight-color: transparent;
   -webkit-touch-callout: none;
   overscroll-behavior-y: none;
