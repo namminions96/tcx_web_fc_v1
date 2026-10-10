@@ -1,0 +1,103 @@
+# Build app iPhone trên máy Mac của GitHub và đẩy thẳng lên TestFlight / App Store Connect.
+# Chạy tay: tab Actions > "iOS - Build & TestFlight" > Run workflow.
+# Cần khai báo các Secrets (Settings > Secrets and variables > Actions) - xem mobile-ios/HUONG-DAN.md
+name: iOS - Build & TestFlight
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Số phiên bản hiển thị trên App Store (VD 1.0.0)'
+        required: true
+        default: '1.0.0'
+
+jobs:
+  build:
+    runs-on: macos-15
+    defaults:
+      run:
+        working-directory: mobile-ios
+    env:
+      BUNDLE_ID: com.fcvuive.app
+      TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Cài thư viện
+        run: npm install
+
+      - name: Copy web vào app
+        run: npm run build
+
+      - name: Tạo dự án Xcode (nếu chưa có)
+        run: |
+          if [ ! -d ios ]; then npx cap add ios --packagemanager SPM; fi
+
+      - name: Tạo icon + màn hình chờ
+        run: |
+          brew install librsvg
+          mkdir -p assets
+          rsvg-convert -w 1024 -h 1024 -b '#070a13' assets-src/icon.svg -o assets/icon-only.png
+          cp assets/icon-only.png assets/icon-foreground.png
+          rsvg-convert -w 2732 -h 2732 -b '#070a13' assets-src/icon.svg -o assets/splash.png
+          cp assets/splash.png assets/splash-dark.png
+          npm run assets
+
+      - name: Đồng bộ web + plugin vào Xcode
+        run: npx cap sync ios
+
+      - name: Cấu hình Info.plist
+        run: |
+          PLIST=ios/App/App/Info.plist
+          /usr/libexec/PlistBuddy -c "Delete :ITSAppUsesNonExemptEncryption" $PLIST 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :ITSAppUsesNonExemptEncryption bool false" $PLIST
+          /usr/libexec/PlistBuddy -c "Set :CFBundleDevelopmentRegion vi" $PLIST || true
+          /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName FC Vui Vẻ" $PLIST || \
+            /usr/libexec/PlistBuddy -c "Add :CFBundleDisplayName string FC Vui Vẻ" $PLIST
+          # Chỉ dọc trên iPhone
+          /usr/libexec/PlistBuddy -c "Delete :UISupportedInterfaceOrientations" $PLIST 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :UISupportedInterfaceOrientations array" $PLIST
+          /usr/libexec/PlistBuddy -c "Add :UISupportedInterfaceOrientations:0 string UIInterfaceOrientationPortrait" $PLIST
+
+      - name: Khoá API App Store Connect
+        run: |
+          mkdir -p ~/private_keys
+          echo "${{ secrets.ASC_KEY_P8_BASE64 }}" | base64 --decode > ~/private_keys/AuthKey_${ASC_KEY_ID}.p8
+
+      - name: Build (archive)
+        run: |
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release \
+            -destination 'generic/platform=iOS' -archivePath $RUNNER_TEMP/App.xcarchive \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath ~/private_keys/AuthKey_${ASC_KEY_ID}.p8 \
+            -authenticationKeyID $ASC_KEY_ID -authenticationKeyIssuerID $ASC_ISSUER_ID \
+            DEVELOPMENT_TEAM=$TEAM_ID CODE_SIGN_STYLE=Automatic \
+            PRODUCT_BUNDLE_IDENTIFIER=$BUNDLE_ID TARGETED_DEVICE_FAMILY=1 \
+            MARKETING_VERSION=${{ github.event.inputs.version }} \
+            CURRENT_PROJECT_VERSION=${{ github.run_number }} \
+            archive
+
+      - name: Đẩy lên App Store Connect (TestFlight)
+        run: |
+          cat > $RUNNER_TEMP/ExportOptions.plist <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>teamID</key><string>${TEAM_ID}</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+          </dict></plist>
+          EOF
+          xcodebuild -exportArchive -archivePath $RUNNER_TEMP/App.xcarchive \
+            -exportOptionsPlist $RUNNER_TEMP/ExportOptions.plist -exportPath $RUNNER_TEMP/export \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath ~/private_keys/AuthKey_${ASC_KEY_ID}.p8 \
+            -authenticationKeyID $ASC_KEY_ID -authenticationKeyIssuerID $ASC_ISSUER_ID

@@ -1,0 +1,20 @@
+{
+  "appId": "com.fcvuive.app",
+  "appName": "FC Vui Vẻ",
+  "webDir": "www",
+  "backgroundColor": "#070a13",
+  "ios": {
+    "contentInset": "never",
+    "limitsNavigationsToAppBoundDomains": false
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 800,
+      "backgroundColor": "#070a13",
+      "showSpinner": false
+    },
+    "LocalNotifications": {
+      "iconColor": "#22c55e"
+    }
+  }
+}

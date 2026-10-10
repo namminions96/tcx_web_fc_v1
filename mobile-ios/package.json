@@ -1,0 +1,27 @@
+{
+  "name": "fc-vui-ve-ios",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Ứng dụng iPhone FC VUI VẺ - đóng gói web Quản Lý Quỹ & Lịch Thi Đấu bằng Capacitor",
+  "scripts": {
+    "build": "node scripts/build-www.js",
+    "assets": "capacitor-assets generate --ios --iconBackgroundColor '#070a13' --iconBackgroundColorDark '#070a13' --splashBackgroundColor '#070a13' --splashBackgroundColorDark '#070a13'",
+    "sync": "npm run build && cap sync ios",
+    "open": "cap open ios"
+  },
+  "dependencies": {
+    "@capacitor/app": "^7.0.0",
+    "@capacitor/clipboard": "^7.0.0",
+    "@capacitor/core": "^7.0.0",
+    "@capacitor/haptics": "^7.0.0",
+    "@capacitor/ios": "^7.0.0",
+    "@capacitor/local-notifications": "^7.0.0",
+    "@capacitor/share": "^7.0.0",
+    "@capacitor/splash-screen": "^7.0.0",
+    "@capacitor/status-bar": "^7.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^7.0.0"
+  }
+}

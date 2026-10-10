@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <radialGradient id="bg" cx="30%" cy="25%" r="90%">
+      <stop offset="0" stop-color="#14532d"/>
+      <stop offset="0.55" stop-color="#0d1527"/>
+      <stop offset="1" stop-color="#070a13"/>
+    </radialGradient>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+  <!-- vạch sân -->
+  <circle cx="512" cy="512" r="300" fill="none" stroke="#22c55e" stroke-opacity="0.25" stroke-width="14"/>
+  <line x1="0" y1="512" x2="1024" y2="512" stroke="#22c55e" stroke-opacity="0.25" stroke-width="14"/>
+  <!-- quả bóng -->
+  <g transform="translate(512 430)">
+    <circle r="210" fill="#ffffff" stroke="#0d1527" stroke-width="10"/>
+    <polygon points="0,-78 74,-24 46,63 -46,63 -74,-24" fill="#0d1527"/>
+    <g stroke="#0d1527" stroke-width="16" stroke-linecap="round">
+      <line x1="0" y1="-78" x2="0" y2="-150"/>
+      <line x1="74" y1="-24" x2="143" y2="-46"/>
+      <line x1="46" y1="63" x2="88" y2="122"/>
+      <line x1="-46" y1="63" x2="-88" y2="122"/>
+      <line x1="-74" y1="-24" x2="-143" y2="-46"/>
+    </g>
+  </g>
+  <text x="512" y="860" text-anchor="middle" font-family="Helvetica Neue, Arial, sans-serif"
+        font-size="118" font-weight="800" fill="#22c55e" letter-spacing="4">FC VUI VẺ</text>
+</svg>

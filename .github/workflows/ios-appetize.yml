@@ -1,0 +1,76 @@
+# Build bản iPhone GIẢ LẬP (không cần tài khoản Apple) rồi đưa lên Appetize.io để chạy thử trên trình duyệt.
+# Chạy tay: tab Actions > "iOS - Chạy thử trên Appetize" > Run workflow.
+# - Có secret APPETIZE_API_TOKEN: tự tải lên Appetize, link nằm ở phần Summary của lượt chạy.
+# - Không có: tải file App-simulator.zip ở mục Artifacts rồi kéo thả lên appetize.io/upload.
+name: iOS - Chạy thử trên Appetize
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-15
+    defaults:
+      run:
+        working-directory: mobile-ios
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Cài thư viện
+        run: npm install
+
+      - name: Copy web vào app
+        run: npm run build
+
+      - name: Tạo dự án Xcode (nếu chưa có)
+        run: |
+          if [ ! -d ios ]; then npx cap add ios --packagemanager SPM; fi
+
+      - name: Tạo icon + màn hình chờ
+        run: |
+          brew install librsvg
+          mkdir -p assets
+          rsvg-convert -w 1024 -h 1024 -b '#070a13' assets-src/icon.svg -o assets/icon-only.png
+          cp assets/icon-only.png assets/icon-foreground.png
+          rsvg-convert -w 2732 -h 2732 -b '#070a13' assets-src/icon.svg -o assets/splash.png
+          cp assets/splash.png assets/splash-dark.png
+          npm run assets
+
+      - name: Đồng bộ web + plugin vào Xcode
+        run: npx cap sync ios
+
+      - name: Build cho máy giả lập
+        run: |
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Debug \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath $RUNNER_TEMP/dd \
+            ONLY_ACTIVE_ARCH=NO CODE_SIGNING_ALLOWED=NO TARGETED_DEVICE_FAMILY=1 \
+            build
+          APP=$(find $RUNNER_TEMP/dd/Build/Products/Debug-iphonesimulator -maxdepth 1 -name '*.app' | head -1)
+          ditto -c -k --sequesterRsrc --keepParent "$APP" $RUNNER_TEMP/App-simulator.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: App-simulator
+          path: ${{ runner.temp }}/App-simulator.zip
+
+      - name: Tải lên Appetize
+        env:
+          APPETIZE_API_TOKEN: ${{ secrets.APPETIZE_API_TOKEN }}
+          APPETIZE_PUBLIC_KEY: ${{ vars.APPETIZE_PUBLIC_KEY }}
+        run: |
+          if [ -z "$APPETIZE_API_TOKEN" ]; then
+            echo "Chưa có secret APPETIZE_API_TOKEN - bỏ qua, hãy tải App-simulator.zip ở mục Artifacts lên appetize.io/upload"
+            exit 0
+          fi
+          # Có APPETIZE_PUBLIC_KEY thì cập nhật app cũ (giữ nguyên link), không thì tạo app mới
+          ENDPOINT=https://api.appetize.io/v1/apps${APPETIZE_PUBLIC_KEY:+/$APPETIZE_PUBLIC_KEY}
+          RES=$(curl -sS --fail-with-body -X POST "$ENDPOINT" -H "X-API-KEY: $APPETIZE_API_TOKEN" \
+            -F "file=@$RUNNER_TEMP/App-simulator.zip" -F "platform=ios")
+          KEY=$(echo "$RES" | python3 -c 'import sys,json; print(json.load(sys.stdin)["publicKey"])')
+          echo "### ▶ Chạy thử: https://appetize.io/app/$KEY?device=iphone15pro" >> $GITHUB_STEP_SUMMARY
+          echo "Lưu publicKey '$KEY' vào Variables APPETIZE_PUBLIC_KEY để lần sau giữ nguyên link" >> $GITHUB_STEP_SUMMARY
