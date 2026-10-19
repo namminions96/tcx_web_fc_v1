@@ -20,7 +20,7 @@
 
 window.SHEET_SYNC_CONFIG = {
   // Web App URL của Apps Script, dạng: https://script.google.com/macros/s/AKfycb..../exec
-  url: 'https://script.google.com/macros/s/AKfycby68TFdrNUnSEmvCDxFJ24uAurwUxHAMpIghWIQ79Az0Xoryi8PFB5HGT_4W44u08le/exec',
+  url: 'https://script.google.com/macros/s/AKfycbyOCKWMiPmw8-nHrW5PoRY9jePkO-BzTZn5qBHpfWtlEqBhu_GUzwZbDmUGIrjnHm2c/exec',
   // Phải trùng với SECRET_TOKEN trong google-apps-script.gs
   token: 'doiboi-fc-2026',
   // 1 = tự động đẩy dữ liệu lên Sheet mỗi khi admin có thay đổi, 0 = tắt
