@@ -789,6 +789,74 @@
       }
     }
 
+    /* LỊCH SỬ ĐÁ ĐỐI (dashboard) */
+    .away-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.25fr;
+      gap: 24px;
+    }
+
+    @media (max-width: 1024px) {
+      .away-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .away-stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .away-stat {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: var(--radius-md);
+      padding: 10px 12px;
+      text-align: center;
+    }
+
+    .away-stat .v {
+      font-size: 22px;
+      font-weight: 800;
+    }
+
+    @media (max-width: 600px) {
+      .away-stats { gap: 6px; }
+      .away-stat { padding: 8px 4px; }
+      .away-stat .v { font-size: 18px; }
+    }
+
+    .away-stat .l {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .form-chips {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+    }
+
+    .form-chip {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 800;
+      color: #0b1220;
+    }
+
+    .form-chip.w { background: var(--accent-emerald); }
+    .form-chip.d { background: #94a3b8; }
+    .form-chip.l { background: var(--accent-rose); }
+
     .result-item details summary {
       font-size: 12px;
       color: var(--accent-cyan);
@@ -1948,7 +2016,7 @@
         <i class="fa-solid fa-chart-pie"></i> Tổng Quan
       </a>
       <a class="nav-item" data-tab="vote">
-        <i class="fa-solid fa-people-group"></i> Vote Già - Trẻ
+        <i class="fa-solid fa-people-group"></i> Vote <span class="lbl-vs">Già - Trẻ</span>
       </a>
       <a class="nav-item" data-tab="history">
         <i class="fa-solid fa-trophy"></i> Lịch Sử Trận Đấu
@@ -2150,16 +2218,30 @@
             <!-- MATCH RESULTS HISTORY -->
             <div class="glass-card dash-results-card">
               <div class="card-header">
-                <h3><i class="fa-solid fa-trophy"></i> Kết Quả Gần Đây</h3>
+                <h3><i class="fa-solid fa-people-arrows"></i> Kết Quả <span class="lbl-vs">Già - Trẻ</span></h3>
                 <div style="display: flex; gap: 6px;">
-                  <button class="btn btn-sm admin-only" onclick="app.openResultModal()"><i class="fa-solid fa-plus"></i>
+                  <button class="btn btn-sm admin-only" onclick="app.openResultModal(null, 'internal')"><i class="fa-solid fa-plus"></i>
                     Nhập KQ</button>
-                  <button class="btn btn-secondary btn-sm" onclick="switchTab('history')">Xem Tất Cả</button>
+                  <button class="btn btn-secondary btn-sm" onclick="app.setResultFilter('internal'); switchTab('history')">Xem Tất Cả</button>
                 </div>
               </div>
               <div id="dashResultSummary"></div>
               <div class="dash-results-scroll" id="dashResultList"></div>
             </div>
+        </div>
+
+        <!-- LỊCH SỬ ĐÁ ĐỐI (giao hữu đội ngoài) -->
+        <div class="glass-card" style="margin-bottom: 28px;">
+          <div class="card-header">
+            <h3><i class="fa-solid fa-handshake"></i> Lịch Sử Đá Đối</h3>
+            <div style="display: flex; gap: 6px;">
+              <button class="btn btn-sm admin-only" onclick="app.openResultModal(null, 'friendly')"><i
+                  class="fa-solid fa-plus"></i> Nhập KQ</button>
+              <button class="btn btn-secondary btn-sm" onclick="app.setResultFilter('friendly'); switchTab('history')">Xem Tất
+                Cả</button>
+            </div>
+          </div>
+          <div id="dashAwayBody"></div>
         </div>
       </div>
 
@@ -2173,7 +2255,7 @@
           </div>
           <div class="result-filter" id="historyResultFilter">
             <button data-kind="all" class="active" onclick="app.setResultFilter('all')">Tất cả</button>
-            <button data-kind="internal" onclick="app.setResultFilter('internal')">Già - Trẻ</button>
+            <button data-kind="internal" onclick="app.setResultFilter('internal')"><span class="lbl-vs">Già - Trẻ</span></button>
             <button data-kind="friendly" onclick="app.setResultFilter('friendly')">Giao hữu</button>
           </div>
           <div id="historyResultSummary"></div>
@@ -2187,7 +2269,7 @@
         <div class="vote-topbar-card">
           <div class="vote-header-flex">
             <div class="vote-title-box">
-              <h3 id="voteSessionTitleDisplay"><i class="fa-solid fa-futbol" style="color:var(--accent-emerald);"></i> Vote Tham Gia & Random Chia Đội Già - Trẻ</h3>
+              <h3 id="voteSessionTitleDisplay"><i class="fa-solid fa-futbol" style="color:var(--accent-emerald);"></i> Vote Tham Gia & Random Chia Đội <span class="lbl-vs">Già - Trẻ</span></h3>
               <p id="voteSessionSub">Điểm danh 1-chạm, hệ thống tự động bốc thăm chia 2 đội cân bằng quân số & vị trí</p>
             </div>
             <div class="vote-configs">
@@ -2327,7 +2409,7 @@
                 <div class="team-box team-old">
                   <div class="team-box-header">
                     <div class="team-name">
-                      <i class="fa-solid fa-shield-halved"></i> ĐỘI GIÀ
+                      <i class="fa-solid fa-shield-halved"></i> ĐỘI <span class="lbl-a-up">GIÀ</span>
                     </div>
                     <span class="team-count-badge" id="teamOldCountBadge">0 Cầu thủ</span>
                   </div>
@@ -2341,7 +2423,7 @@
                 <div class="team-box team-young">
                   <div class="team-box-header">
                     <div class="team-name">
-                      <i class="fa-solid fa-bolt"></i> ĐỘI TRẺ
+                      <i class="fa-solid fa-bolt"></i> ĐỘI <span class="lbl-b-up">TRẺ</span>
                     </div>
                     <span class="team-count-badge" id="teamYoungCountBadge">0 Cầu thủ</span>
                   </div>
@@ -2533,6 +2615,14 @@
             <div class="form-group">
               <label>Mức Thu Quỹ Định Kỳ Mặc Định (VNĐ)</label>
               <input type="number" id="settingDefaultFee">
+            </div>
+            <div class="form-group">
+              <label>Tên 2 Đội Nội Bộ <small style="text-transform:none; font-weight:400; color:var(--text-muted);">(dùng cho Vote chia đội & kết quả nội bộ)</small></label>
+              <div style="display: flex; gap: 10px; align-items: center;">
+                <input type="text" id="settingSideA" placeholder="Già" maxlength="20">
+                <span style="color: var(--text-muted); font-weight: 700;">vs</span>
+                <input type="text" id="settingSideB" placeholder="Trẻ" maxlength="20">
+              </div>
             </div>
             <div class="form-group">
               <label>Mật Khẩu Admin</label>
@@ -3028,8 +3118,8 @@
 
       const titles = {
         dashboard: ['Dashboard Tổng Quan', 'Hệ thống quản lý tài chính & lịch thi đấu đội bóng'],
-        history: ['Lịch Sử Trận Đấu', 'Kết quả các trận nội bộ Già - Trẻ và giao hữu đội ngoài'],
-        vote: ['Vote Già - Trẻ & Chia Đội', 'Điểm danh tham gia và hệ thống random chia đội cân bằng'],
+        history: ['Lịch Sử Trận Đấu', `Kết quả các trận nội bộ ${sideVs()} và giao hữu đội ngoài`],
+        vote: [`Vote ${sideVs()} & Chia Đội`, 'Điểm danh tham gia và hệ thống random chia đội cân bằng'],
         players: ['Quản Lý Thành Viên', 'Danh sách thành viên và phân loại định mức quỹ'],
         monthly: ['Đóng Quỹ Theo Tháng', 'Theo dõi và ghi nhận đóng quỹ định kỳ hàng tháng'],
         party: ['Thu Tiền Liên Hoan', 'Tạo liên hoan, tự chia tiền và theo dõi ai đã đóng'],
@@ -3122,6 +3212,7 @@
       document.getElementById('topbarBalance').textContent = fmtVND(currentBalance());
 
       if (app.renderBankCard) app.renderBankCard();
+      applyTeamLabels();
       renderDashboard();
       renderVote();
       renderPlayers();
@@ -3250,9 +3341,24 @@
     const RESULT_PREVIEW_LIMIT = 5;
     let resultFilter = 'all';
 
+    // Tên 2 đội nội bộ, tự đặt ở Cài Đặt (mặc định Già / Trẻ). Dữ liệu vẫn lưu teamOld = đội A, teamYoung = đội B.
+    function sideA() { return (state.teamLabels && state.teamLabels.a) || 'Già'; }
+    function sideB() { return (state.teamLabels && state.teamLabels.b) || 'Trẻ'; }
+    function sideVs() { return `${sideA()} - ${sideB()}`; }
+    function applyTeamLabels() {
+      document.querySelectorAll('.lbl-vs').forEach(el => { el.textContent = sideVs(); });
+      document.querySelectorAll('.lbl-a-up').forEach(el => { el.textContent = sideA().toUpperCase(); });
+      document.querySelectorAll('.lbl-b-up').forEach(el => { el.textContent = sideB().toUpperCase(); });
+      const activeNav = document.querySelector('.nav-item.active');
+      const tab = activeNav && activeNav.dataset.tab;
+      // Cập nhật tiêu đề trang đang mở (không gọi switchTab để khỏi cuộn lên đầu trang).
+      if (tab === 'vote') document.getElementById('pageTitle').textContent = `Vote ${sideVs()} & Chia Đội`;
+      if (tab === 'history') document.getElementById('pageSub').textContent = `Kết quả các trận nội bộ ${sideVs()} và giao hữu đội ngoài`;
+    }
+
     function resultSideNames(r) {
       return r.kind === 'internal'
-        ? ['Già', 'Trẻ']
+        ? [sideA(), sideB()]
         : [state.teamName || 'FC Vui Vẻ', r.opponent || 'Đối thủ'];
     }
 
@@ -3261,8 +3367,8 @@
       if (a === b) return '<span class="badge badge-gray">🤝 Hòa</span>';
       if (r.kind === 'internal') {
         return a > b
-          ? '<span class="badge badge-info">🏆 Già thắng</span>'
-          : '<span class="badge badge-success">🏆 Trẻ thắng</span>';
+          ? `<span class="badge badge-info">🏆 ${escapeHtml(sideA())} thắng</span>`
+          : `<span class="badge badge-success">🏆 ${escapeHtml(sideB())} thắng</span>`;
       }
       return a > b
         ? '<span class="badge badge-success">✅ Thắng</span>'
@@ -3286,7 +3392,7 @@
       const lines = [];
       if (internal.length && filter !== 'friendly') {
         const t = tally(internal);
-        lines.push(`<i class="fa-solid fa-people-arrows"></i> Già - Trẻ (${internal.length} trận): Già thắng <b>${t.a}</b> · Hòa <b>${t.d}</b> · Trẻ thắng <b>${t.b}</b>`);
+        lines.push(`<i class="fa-solid fa-people-arrows"></i> ${escapeHtml(sideVs())} (${internal.length} trận): ${escapeHtml(sideA())} thắng <b>${t.a}</b> · Hòa <b>${t.d}</b> · ${escapeHtml(sideB())} thắng <b>${t.b}</b>`);
       }
       if (friendly.length && filter !== 'internal') {
         const t = tally(friendly);
@@ -3303,8 +3409,8 @@
       const teamA = r.teamA || [], teamB = r.teamB || [];
       const lineup = r.kind === 'internal'
         ? (teamA.length || teamB.length
-          ? `<div><b style="color:var(--accent-cyan);">Già:</b> ${escapeHtml(teamA.join(', ') || '—')}</div>
-             <div><b style="color:var(--accent-emerald);">Trẻ:</b> ${escapeHtml(teamB.join(', ') || '—')}</div>` : '')
+          ? `<div><b style="color:var(--accent-cyan);">${escapeHtml(sideA())}:</b> ${escapeHtml(teamA.join(', ') || '—')}</div>
+             <div><b style="color:var(--accent-emerald);">${escapeHtml(sideB())}:</b> ${escapeHtml(teamB.join(', ') || '—')}</div>` : '')
         : (teamA.length ? `<div>${escapeHtml(teamA.join(', '))}</div>` : '');
       return `
     <div class="result-item">
@@ -3340,15 +3446,84 @@
         || '<div style="text-align:center; color:var(--text-muted); padding:20px;">Chưa có kết quả trận đấu</div>';
     }
 
+    /* Lịch sử đá đối trên dashboard. list = trận giao hữu, đã sắp xếp mới nhất trước.
+       Trái: thành tích chung + phong độ + 5 trận gần nhất. Phải: đối đầu theo từng đội. */
+    function awayHistoryHtml(list) {
+      if (!list.length) {
+        return '<div style="text-align:center; color:var(--text-muted); padding:20px;">Chưa có trận đá đối nào với đội ngoài</div>';
+      }
+      const outcome = r => {
+        const a = Number(r.scoreA) || 0, b = Number(r.scoreB) || 0;
+        return a > b ? 'w' : a < b ? 'l' : 'd';
+      };
+      const count = k => list.filter(r => outcome(r) === k).length;
+      const w = count('w'), d = count('d'), l = count('l');
+      const gf = list.reduce((s, r) => s + (Number(r.scoreA) || 0), 0);
+      const ga = list.reduce((s, r) => s + (Number(r.scoreB) || 0), 0);
+      const chipText = { w: 'T', d: 'H', l: 'B' };
+      const chipTitle = r => `${fmtDate(r.date)} · ${r.opponent || 'Đối thủ'} ${r.scoreA || 0}-${r.scoreB || 0}`;
+      // Phong độ đọc từ trái sang phải = cũ đến mới.
+      const form = list.slice(0, 5).reverse().map(r =>
+        `<span class="form-chip ${outcome(r)}" title="${escapeAttr(chipTitle(r))}">${chipText[outcome(r)]}</span>`).join('');
+
+      // Đối đầu theo đội (gộp theo tên, không phân biệt hoa thường / khoảng trắng thừa).
+      const byTeam = {};
+      list.forEach(r => {
+        const name = (r.opponent || 'Đối thủ').trim();
+        const key = name.toLowerCase().replace(/\s+/g, ' ');
+        const t = byTeam[key] || (byTeam[key] = { name, n: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, last: r });
+        t.n++; t[outcome(r)]++;
+        t.gf += Number(r.scoreA) || 0; t.ga += Number(r.scoreB) || 0;
+      });
+      const teams = Object.values(byTeam).sort((x, y) => y.n - x.n || (y.last.date || '').localeCompare(x.last.date || ''));
+      const teamRows = teams.map(t => `
+        <tr>
+          <td><b>${escapeHtml(t.name)}</b></td>
+          <td style="text-align:center;">${t.n}</td>
+          <td style="text-align:center; white-space:nowrap;"><b style="color:var(--accent-emerald);">${t.w}</b> - ${t.d} - <b style="color:var(--accent-rose);">${t.l}</b></td>
+          <td style="text-align:center;">${t.gf}-${t.ga}</td>
+          <td style="white-space:nowrap;">${fmtDate(t.last.date).slice(0, 5)} <span class="form-chip ${outcome(t.last)}" style="width:20px; height:20px; font-size:10px;">${chipText[outcome(t.last)]}</span> ${t.last.scoreA || 0}-${t.last.scoreB || 0}</td>
+        </tr>`).join('');
+
+      return `
+        <div class="away-grid">
+          <div>
+            <div class="away-stats">
+              <div class="away-stat"><div class="v">${list.length}</div><div class="l">Trận</div></div>
+              <div class="away-stat"><div class="v" style="color:var(--accent-emerald);">${w}</div><div class="l">Thắng</div></div>
+              <div class="away-stat"><div class="v" style="color:#94a3b8;">${d}</div><div class="l">Hòa</div></div>
+              <div class="away-stat"><div class="v" style="color:var(--accent-rose);">${l}</div><div class="l">Thua</div></div>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; font-size:12px; color:var(--text-muted); margin-bottom:14px;">
+              <span>Tỉ lệ thắng <b style="color:#fff;">${Math.round(w / list.length * 100)}%</b> · Bàn thắng/thua <b style="color:#fff;">${gf}-${ga}</b></span>
+              <span style="display:flex; align-items:center; gap:6px;">Phong độ <span class="form-chips">${form}</span></span>
+            </div>
+            ${resultListHtml(list.slice(0, 3))}
+          </div>
+          <div>
+            <div style="font-size:12px; color:var(--text-muted); font-weight:600; margin-bottom:8px; text-transform:uppercase;">Đối đầu theo đội</div>
+            <div class="table-container">
+              <table>
+                <thead><tr><th>Đội</th><th style="text-align:center;">Trận</th><th style="text-align:center;">T - H - B</th><th style="text-align:center;">Bàn</th><th>Gần nhất</th></tr></thead>
+                <tbody>${teamRows}</tbody>
+              </table>
+            </div>
+          </div>
+        </div>`;
+    }
+
     function renderMatchResults() {
       const all = sortedMatchResults();
 
-      // Dashboard: 5 trận gần nhất, mọi loại trận.
+      // Dashboard: card Già - Trẻ chỉ lấy trận nội bộ; trận gặp đội ngoài nằm ở card Lịch Sử Đá Đối.
       const dashList = document.getElementById('dashResultList');
       if (dashList) {
-        document.getElementById('dashResultSummary').innerHTML = resultSummaryHtml(all, 'all');
-        dashList.innerHTML = resultListHtml(all.slice(0, RESULT_PREVIEW_LIMIT));
+        const internal = all.filter(r => r.kind === 'internal');
+        document.getElementById('dashResultSummary').innerHTML = resultSummaryHtml(internal, 'internal');
+        dashList.innerHTML = resultListHtml(internal.slice(0, RESULT_PREVIEW_LIMIT));
       }
+      const awayBody = document.getElementById('dashAwayBody');
+      if (awayBody) awayBody.innerHTML = awayHistoryHtml(all.filter(r => r.kind !== 'internal'));
 
       // Trang Lịch Sử Trận Đấu: toàn bộ, có lọc theo loại trận.
       const histList = document.getElementById('historyResultList');
@@ -3388,7 +3563,7 @@
       // Update session title & subtitle
       const titleDisplay = document.getElementById('voteSessionTitleDisplay');
       if (titleDisplay) {
-        titleDisplay.innerHTML = `<i class="fa-solid fa-futbol" style="color:var(--accent-emerald);"></i> ${escapeHtml(state.matchVote.matchTitle || 'Vote Tham Gia & Random Chia Đội Già - Trẻ')}`;
+        titleDisplay.innerHTML = `<i class="fa-solid fa-futbol" style="color:var(--accent-emerald);"></i> ${escapeHtml(state.matchVote.matchTitle || 'Vote Tham Gia & Random Chia Đội ' + sideVs())}`;
       }
 
       // Update field size selector
@@ -3445,7 +3620,7 @@
           statusBadge.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> <span>Đang có ${totalAttending}/${targetCount} người — Cần thêm <b>${diff}</b> người để đủ 2 đội sân ${fieldSize}!</span>`;
         } else if (totalAttending === targetCount) {
           statusBadge.className = 'vote-status-badge perfect';
-          statusBadge.innerHTML = `<i class="fa-solid fa-circle-check"></i> <span>🔥 Vừa chuẩn đủ 2 đội! (${fieldSize} Già vs ${fieldSize} Trẻ)</span>`;
+          statusBadge.innerHTML = `<i class="fa-solid fa-circle-check"></i> <span>🔥 Vừa chuẩn đủ 2 đội! (${fieldSize} ${escapeHtml(sideA())} vs ${fieldSize} ${escapeHtml(sideB())})</span>`;
         } else {
           const surplus = totalAttending - targetCount;
           statusBadge.className = 'vote-status-badge surplus';
@@ -3843,6 +4018,8 @@
     function renderSettings() {
       document.getElementById('settingTeamName').value = state.teamName || '';
       document.getElementById('settingDefaultFee').value = state.defaultFee || 300000;
+      document.getElementById('settingSideA').value = sideA();
+      document.getElementById('settingSideB').value = sideB();
       document.getElementById('syncUrl').value = state.sheetSync.url || '';
       document.getElementById('syncToken').value = state.sheetSync.token || '';
       document.getElementById('syncAutoPush').checked = !!state.sheetSync.autoPush;
@@ -4289,12 +4466,12 @@
           return POSITIONS.filter(p => counts[p.id] > 0).map(p => `${p.emoji} ${counts[p.id]} ${p.short}`).join(' · ');
         }
 
-        let txt = `⚽ ${teamName.toUpperCase()} - KẾT QUẢ CHIA ĐỘI GIÀ vs TRẺ ⚽\n`;
+        let txt = `⚽ ${teamName.toUpperCase()} - KẾT QUẢ CHIA ĐỘI ${sideA().toUpperCase()} vs ${sideB().toUpperCase()} ⚽\n`;
         txt += `🏟️ Buổi đá: ${title}\n`;
         txt += `👥 Tổng quân số: ${total} cầu thủ (Đá sân ${fieldSize})\n`;
         txt += `═════════════════════════════\n\n`;
 
-        txt += `🔴 ĐỘI GIÀ (${oldList.length} Cầu thủ):\n`;
+        txt += `🔴 ĐỘI ${sideA().toUpperCase()} (${oldList.length} Cầu thủ):\n`;
         const oldSum = getSummaryText(oldList);
         if (oldSum) txt += `📋 Tuyến: ${oldSum}\n`;
         oldList.forEach((p, idx) => {
@@ -4302,7 +4479,7 @@
           txt += `  ${pos.emoji} ${idx + 1}. ${p.name} (${pos.name})\n`;
         });
 
-        txt += `\n⚪ ĐỘI TRẺ (${youngList.length} Cầu thủ):\n`;
+        txt += `\n⚪ ĐỘI ${sideB().toUpperCase()} (${youngList.length} Cầu thủ):\n`;
         const youngSum = getSummaryText(youngList);
         if (youngSum) txt += `📋 Tuyến: ${youngSum}\n`;
         youngList.forEach((p, idx) => {
@@ -4990,20 +5167,20 @@
         const kind = document.getElementById('rs_kind').value;
         const isInternal = kind === 'internal';
         document.getElementById('rs_opponent_group').style.display = isInternal ? 'none' : 'block';
-        document.getElementById('rs_labelA').textContent = isInternal ? 'Bàn đội Già' : 'Bàn ' + (state.teamName || 'đội mình');
-        document.getElementById('rs_labelB').textContent = isInternal ? 'Bàn đội Trẻ' : 'Bàn đối thủ';
+        document.getElementById('rs_labelA').textContent = isInternal ? 'Bàn đội ' + sideA() : 'Bàn ' + (state.teamName || 'đội mình');
+        document.getElementById('rs_labelB').textContent = isInternal ? 'Bàn đội ' + sideB() : 'Bàn đối thủ';
         const lineupLabel = document.getElementById('rs_lineup_label');
         if (lineupLabel) {
           const l = app.voteLineup(kind);
           lineupLabel.textContent = isInternal
-            ? `Lưu đội hình từ tab Chia Đội (Già ${l.teamA.length} - Trẻ ${l.teamB.length} người)`
+            ? `Lưu đội hình từ tab Chia Đội (${sideA()} ${l.teamA.length} - ${sideB()} ${l.teamB.length} người)`
             : `Lưu danh sách tham gia từ tab Vote (${l.teamA.length} người)`;
         }
       },
-      openResultModal(id) {
+      openResultModal(id, presetKind) {
         if (!isAdmin) { alert('🔒 Bạn cần đăng nhập Admin để thực hiện!'); return; }
         const r = id ? (state.matchResults || []).find(x => x.id === id) : null;
-        const kind = r ? r.kind : 'internal';
+        const kind = r ? r.kind : (presetKind || 'internal');
         const val = v => escapeHtml(v == null ? '' : String(v));
         openModal(`
       <div class="modal-header">
@@ -5013,7 +5190,7 @@
       <div class="form-group">
         <label>Loại trận</label>
         <select id="rs_kind" onchange="app.onResultKindChange()">
-          <option value="internal" ${kind === 'internal' ? 'selected' : ''}>Nội bộ Già - Trẻ</option>
+          <option value="internal" ${kind === 'internal' ? 'selected' : ''}>Nội bộ ${escapeHtml(sideVs())}</option>
           <option value="friendly" ${kind === 'friendly' ? 'selected' : ''}>Giao hữu đội ngoài</option>
         </select>
       </div>
@@ -5027,11 +5204,11 @@
       </div>
       <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
         <div class="form-group">
-          <label id="rs_labelA">Bàn đội Già</label>
+          <label id="rs_labelA">Bàn đội ${escapeHtml(sideA())}</label>
           <input type="number" min="0" id="rs_scoreA" value="${r ? val(r.scoreA) : '0'}">
         </div>
         <div class="form-group">
-          <label id="rs_labelB">Bàn đội Trẻ</label>
+          <label id="rs_labelB">Bàn đội ${escapeHtml(sideB())}</label>
           <input type="number" min="0" id="rs_scoreB" value="${r ? val(r.scoreB) : '0'}">
         </div>
       </div>
@@ -5100,6 +5277,10 @@
       saveSettings() {
         state.teamName = document.getElementById('settingTeamName').value.trim() || 'FC Vui Vẻ';
         state.defaultFee = Number(document.getElementById('settingDefaultFee').value) || 300000;
+        const a = document.getElementById('settingSideA').value.trim() || 'Già';
+        const b = document.getElementById('settingSideB').value.trim() || 'Trẻ';
+        if (a.toLowerCase() === b.toLowerCase()) { alert('Tên 2 đội nội bộ phải khác nhau!'); return; }
+        state.teamLabels = { a, b };
         saveData(); alert('Đã lưu cài đặt!');
       },
       exportData() {
@@ -5150,6 +5331,7 @@
           matches: state.matches,
           matchResults: state.matchResults || [],
           parties: state.parties || [],
+          teamLabels: { a: sideA(), b: sideB() },
           matchVote: state.matchVote,
           cancelledFixedMatches: state.cancelledFixedMatches || [],
           schedule: state.schedule
@@ -5237,6 +5419,7 @@
           if (!state.matchResults) state.matchResults = [];
           // Apps Script chưa hỗ trợ liên hoan sẽ không trả về parties -> giữ dữ liệu liên hoan trên máy.
           if (Array.isArray(data.parties)) state.parties = data.parties;
+          if (data.teamLabels && data.teamLabels.a && data.teamLabels.b) state.teamLabels = data.teamLabels;
           if (!state.parties) state.parties = [];
 
           // Bảo vệ state.matchVote: không để dữ liệu rỗng từ Sheet bản cũ xoá điểm danh cục bộ
