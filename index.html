@@ -4068,10 +4068,13 @@
               <span style="font-size:13px; color:var(--text-muted); font-weight:500;">· ${fmtDate(pt.date)}</span>
               <span class="badge ${done ? 'badge-success' : 'badge-danger'}" style="margin-left:6px;">${done ? 'Đã thu đủ' : `${st.paidCount}/${st.count} đã đóng`}</span>
             </h3>
-            <div class="admin-only" style="display:flex; gap:8px; flex-wrap:wrap;">
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <button class="btn btn-sm" onclick="app.openPartyShare('${pt.id}')"><i class="fa-solid fa-copy"></i> Copy Zalo</button>
+              <span class="admin-only" style="display:flex; gap:8px; flex-wrap:wrap;">
               <button class="btn btn-secondary btn-sm" onclick="app.addPartyGuest('${pt.id}')"><i class="fa-solid fa-user-plus"></i> Thêm khách</button>
               <button class="btn btn-secondary btn-sm" onclick="app.openPartyModal('${pt.id}')"><i class="fa-solid fa-pen"></i> Sửa</button>
               <button class="btn btn-danger btn-sm" onclick="app.deleteParty('${pt.id}')"><i class="fa-solid fa-trash"></i></button>
+              </span>
             </div>
           </div>
           <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:14px; background:rgba(0,0,0,0.25); padding:14px 18px; border-radius:var(--radius-md); border:1px solid var(--card-border);">
@@ -4979,11 +4982,73 @@
         const date = document.getElementById('pt_date').value || toISODate(new Date());
         const title = document.getElementById('pt_title').value.trim() || `Liên hoan ${fmtDate(date)}`;
 
+        let newId = null;
         if (old) Object.assign(old, { title, date, total, members });
-        else state.parties.push({ id: uid('party'), title, date, total, members, createdAt: nowStamp() });
+        else state.parties.push({ id: (newId = uid('party')), title, date, total, members, createdAt: nowStamp() });
         closeModal();
         saveData();
         switchTab('party');
+        // Tạo mới xong -> mở luôn tin nhắn để copy gửi nhóm Zalo.
+        if (newId) setTimeout(() => app.openPartyShare(newId), 250);
+      },
+      // Tin nhắn báo tiền liên hoan để dán vào Zalo: tổng bill, số người, mỗi người, ai đã/chưa đóng.
+      // Không kèm STK vì mỗi buổi người trả bill khác nhau.
+      partyShareText(pt) {
+        const st = partyStats(pt);
+        const guestCnt = pt.members.filter(m => m.guest).length;
+        const line = '═════════════════════════';
+        let txt = `🍻 ${(state.teamName || 'FC Vui Vẻ').toUpperCase()} - THU TIỀN LIÊN HOAN 🍻\n`;
+        txt += `🎉 ${pt.title}\n`;
+        txt += `📅 Ngày: ${fmtDate(pt.date)}\n`;
+        txt += `💰 Tổng bill: ${fmtVND(pt.total)}\n`;
+        txt += `👥 Số người: ${st.count}` + (guestCnt ? ` (${st.count - guestCnt} thành viên + ${guestCnt} khách)` : '') + '\n';
+        txt += `💵 MỖI NGƯỜI: ${fmtVND(st.share)}\n`;
+        txt += `${line}\n📋 Danh sách:\n`;
+        pt.members.forEach((m, i) => {
+          txt += `${m.paid ? '✅' : '⬜'} ${i + 1}. ${m.name}${m.guest ? ' (khách)' : ''}${m.paid ? ' - đã đóng' : ''}\n`;
+        });
+        txt += `${line}\n`;
+        txt += st.unpaid.length
+          ? `⏳ Còn ${st.unpaid.length} người chưa đóng (${fmtVND(st.unpaid.length * st.share)})\n`
+          : `🎉 Đã thu đủ, cảm ơn anh em!\n`;
+        if (st.unpaid.length) txt += `🙏 Anh em gửi tiền giúp nhé!`;
+        return txt.trim();
+      },
+      openPartyShare(partyId) {
+        const pt = state.parties.find(x => x.id === partyId);
+        if (!pt) return;
+        openModal(`
+          <div class="modal-header">
+            <h3><i class="fa-solid fa-comment-dots"></i> Tin Nhắn Gửi Zalo</h3>
+            <i class="fa-solid fa-xmark modal-close" onclick="closeModal()"></i>
+          </div>
+          <div class="form-group">
+            <textarea id="pt_share_text" rows="14" style="font-size:13px; line-height:1.5;">${escapeHtml(app.partyShareText(pt))}</textarea>
+            <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Có thể sửa nội dung trước khi sao chép.</div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal()">Đóng</button>
+            <button class="btn" onclick="app.copyText(document.getElementById('pt_share_text').value, '📋 Đã sao chép! Dán ngay vào nhóm Zalo nhé.')"><i class="fa-solid fa-copy"></i> Sao Chép</button>
+          </div>
+        `);
+      },
+      copyText(text, okMsg) {
+        const fallback = () => {
+          const ta = document.createElement('textarea');
+          ta.value = text;
+          ta.style.position = 'fixed';
+          ta.style.left = '-9999px';
+          document.body.appendChild(ta);
+          ta.select();
+          try { document.execCommand('copy'); showToast(okMsg); }
+          catch (err) { alert('Vui lòng sao chép thủ công:\n\n' + text); }
+          document.body.removeChild(ta);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(() => showToast(okMsg)).catch(fallback);
+        } else {
+          fallback();
+        }
       },
       togglePartyPaid(partyId, memberId, paid) {
         if (!isAdmin) { alert('🔒 Bạn cần đăng nhập Admin để thực hiện!'); renderParties(); return; }
@@ -5655,24 +5720,64 @@
         alert('✅ Đã sao chép số tài khoản: ' + text);
       },
 
+      /* QR chuyển khoản quỹ: nội dung CK tự theo KỲ QUỸ ĐANG THU (VD "Dong quy thang 10-2026"),
+         bỏ dấu tiếng Việt vì nhiều ngân hàng không nhận dấu. Chọn tên thì QR kèm luôn tên + đúng số tiền. */
+      fundQrInfo(pid) {
+        const mk = activeFeeMonthKey();
+        const [y, m] = mk.split('-');
+        const p = pid ? playerById(pid) : null;
+        const noAccent = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D');
+        const info = `${p ? noAccent(p.name) + ' ' : ''}Dong quy thang ${parseInt(m, 10)}-${y}`;
+        return { info, amount: p ? playerFee(p, mk) : 0 };
+      },
+      fundQrUrl(pid) {
+        const bank = window.BANK_CONFIG || {};
+        const base = bank.qrImage || 'https://img.vietqr.io/image/MSB-0901324666-compact2.jpg';
+        const { info, amount } = app.fundQrInfo(pid);
+        try {
+          const u = new URL(base);
+          u.searchParams.set('amount', amount);
+          u.searchParams.set('addInfo', info);
+          return u.toString().replace(/\+/g, '%20');
+        } catch (e) {
+          return base;
+        }
+      },
+      updateQrModal() {
+        const pid = (document.getElementById('qr_player') || {}).value || '';
+        const { info, amount } = app.fundQrInfo(pid);
+        document.getElementById('qr_img').src = app.fundQrUrl(pid);
+        document.getElementById('qr_info').textContent = info;
+        document.getElementById('qr_amount').textContent = amount ? fmtVND(amount) : 'Tự nhập';
+      },
+
       openQrModal() {
         const bank = window.BANK_CONFIG || {};
         const bankName = bank.bankName || 'Ngân hàng MSB';
         const accNum = bank.accountNumber || '0901324666';
         const accName = bank.accountName || 'QUỸ FC VUI VẺ';
-        const qrImg = bank.qrImage || 'https://img.vietqr.io/image/MSB-0901324666-compact2.jpg?amount=0&addInfo=Dong%20quy%20FC';
+        const mk = activeFeeMonthKey();
 
         openModal(`
           <div class="modal-header">
-            <h3><i class="fa-solid fa-qrcode"></i> Mã QR Chuyển Khoản Quỹ</h3>
+            <h3><i class="fa-solid fa-qrcode"></i> Mã QR Đóng Quỹ ${monthLabel(mk)}</h3>
             <i class="fa-solid fa-xmark modal-close" onclick="closeModal()"></i>
           </div>
+          <div class="form-group">
+            <label>Bạn là ai? <small style="text-transform:none; font-weight:400; color:var(--text-muted);">(chọn để QR điền sẵn tên & số tiền)</small></label>
+            <select id="qr_player" onchange="app.updateQrModal()">
+              <option value="">-- Không chọn --</option>
+              ${feePlayers(mk).map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('')}
+            </select>
+          </div>
           <div class="qr-modal-body">
-            <img src="${qrImg}" class="qr-modal-img" alt="QR Code Fullsize">
+            <img id="qr_img" src="${app.fundQrUrl('')}" class="qr-modal-img" alt="QR Code Fullsize">
             <div style="margin-top: 16px;">
               <div style="font-weight: 800; font-size: 16px; color: var(--accent-emerald);">${bankName}</div>
               <div style="font-size: 20px; font-weight: 900; letter-spacing: 1px; margin: 4px 0; color: #fff;">${accNum}</div>
               <div style="font-size: 13px; color: var(--text-muted); font-weight: 600;">Chủ TK: <span style="color: #fff;">${accName}</span></div>
+              <div style="font-size: 13px; color: var(--text-muted); font-weight: 600; margin-top: 6px;">Nội dung CK: <span id="qr_info" style="color: var(--accent-amber);"></span></div>
+              <div style="font-size: 13px; color: var(--text-muted); font-weight: 600;">Số tiền: <span id="qr_amount" style="color: #fff;"></span></div>
             </div>
           </div>
           <div class="modal-footer" style="justify-content: center;">
@@ -5680,6 +5785,7 @@
             <button class="btn btn-secondary" onclick="closeModal()">Đóng</button>
           </div>
         `);
+        app.updateQrModal();
       },
 
       renderBankCard() {
@@ -5687,7 +5793,7 @@
         const bName = bank.bankName || 'Ngân hàng MSB';
         const badge = bName.replace(/^Ngân hàng\s+/i, '').trim();
         const accNum = bank.accountNumber || '0901324666';
-        const qrImg = bank.qrImage || 'https://img.vietqr.io/image/MSB-0901324666-compact2.jpg?amount=0&addInfo=Dong%20quy%20FC';
+        const qrImg = app.fundQrUrl('');
 
         const bBadgeEl = document.getElementById('sidebarBankBadge');
         const bNameEl = document.getElementById('sidebarBankName');
