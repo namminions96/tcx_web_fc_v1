@@ -1117,20 +1117,81 @@
       display: none !important;
     }
 
-    /* Người xem: Tổng Quan chỉ còn Lịch Thi Đấu + Kết Quả nội bộ, chia đôi cho cân. */
+    /* Người xem: cột trái = Lịch Thi Đấu + Bảng Vinh Danh, cột phải = Kết Quả nội bộ (cao hết 2 hàng). */
     @media (min-width: 1025px) {
       body.user-mode .dashboard-grid {
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: 1fr 1.35fr;
+        grid-template-areas: "sched results" "board results";
+        grid-template-rows: auto 1fr;
       }
+
+      body.user-mode .dash-sched-card { grid-area: sched; }
+      body.user-mode .dash-board-card { grid-area: board; }
 
       body.user-mode .dash-results-card {
+        grid-area: results;
         contain: none;
       }
-
-      body.user-mode .dash-results-scroll {
-        max-height: 520px;
-      }
     }
+
+    /* Đếm ngược trận sắp tới */
+    .match-countdown {
+      margin-top: 12px;
+      padding: 10px 14px;
+      border-radius: var(--radius-md);
+      background: linear-gradient(135deg, rgba(0, 230, 153, 0.12), rgba(0, 180, 216, 0.08));
+      border: 1px solid rgba(0, 230, 153, 0.25);
+      font-size: 13px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .match-countdown b {
+      font-size: 18px;
+      color: var(--accent-emerald);
+    }
+
+    /* Bảng vinh danh */
+    .honor-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    @media (max-width: 600px) {
+      .honor-grid { grid-template-columns: 1fr; }
+    }
+
+    .honor-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .honor-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 10px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.02);
+      margin-bottom: 6px;
+      font-size: 13px;
+    }
+
+    .honor-rank {
+      width: 22px;
+      text-align: center;
+      font-weight: 800;
+      color: var(--text-muted);
+    }
+
+    .honor-row .name { flex: 1; font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .honor-row .val { font-weight: 800; color: var(--accent-amber); white-space: nowrap; }
 
     body.user-mode .admin-input {
       pointer-events: none !important;
@@ -2192,6 +2253,38 @@
           <div id="dashFundList"></div>
         </div>
 
+        <!-- STATS CHO NGƯỜI XEM (không có thông tin quỹ) -->
+        <div class="grid-stats user-only">
+          <div class="glass-card stat-box">
+            <div class="stat-icon players"><i class="fa-solid fa-user-group"></i></div>
+            <div class="stat-details">
+              <div class="lbl">Thành Viên</div>
+              <div class="num" id="uStatPlayers" style="color: var(--accent-amber);">0</div>
+            </div>
+          </div>
+          <div class="glass-card stat-box">
+            <div class="stat-icon balance"><i class="fa-solid fa-calendar-day"></i></div>
+            <div class="stat-details">
+              <div class="lbl">Trận Sắp Tới</div>
+              <div class="num" id="uStatNext" style="color: var(--accent-indigo);">--</div>
+            </div>
+          </div>
+          <div class="glass-card stat-box">
+            <div class="stat-icon income"><i class="fa-solid fa-people-arrows"></i></div>
+            <div class="stat-details">
+              <div class="lbl" id="uStatInternalLbl">Nội Bộ</div>
+              <div class="num" id="uStatInternal" style="color: var(--accent-emerald);">0</div>
+            </div>
+          </div>
+          <div class="glass-card stat-box">
+            <div class="stat-icon expense"><i class="fa-solid fa-handshake"></i></div>
+            <div class="stat-details">
+              <div class="lbl">Đá Đối (T - H - B)</div>
+              <div class="num" id="uStatAway" style="color: #fff;">0</div>
+            </div>
+          </div>
+        </div>
+
         <!-- MAIN GRID: 2 hàng x 2 cột, card cùng hàng tự cao bằng nhau -->
         <div class="dashboard-grid">
             <!-- MONTH PROGRESS -->
@@ -2215,7 +2308,7 @@
             </div>
 
             <!-- MATCH SCHEDULE -->
-            <div class="glass-card">
+            <div class="glass-card dash-sched-card">
               <div class="card-header">
                 <h3><i class="fa-solid fa-calendar-days"></i> Lịch Thi Đấu</h3>
                 <button class="btn btn-sm admin-only" onclick="app.openMatchModal()"><i class="fa-solid fa-plus"></i>
@@ -2261,6 +2354,14 @@
               </div>
               <div id="dashResultSummary"></div>
               <div class="dash-results-scroll" id="dashResultList"></div>
+            </div>
+
+            <!-- BẢNG VINH DANH (chỉ người xem): vua phá lưới & MVP, tính từ lịch sử trận đấu -->
+            <div class="glass-card dash-board-card user-only">
+              <div class="card-header">
+                <h3><i class="fa-solid fa-medal" style="color: var(--accent-amber);"></i> Bảng Vinh Danh</h3>
+              </div>
+              <div id="dashHonorBoard"></div>
             </div>
         </div>
 
@@ -3189,7 +3290,7 @@
       document.querySelectorAll('.view').forEach(el => el.classList.toggle('active', el.id === 'view-' + tabId));
 
       const titles = {
-        dashboard: ['Dashboard Tổng Quan', 'Hệ thống quản lý tài chính & lịch thi đấu đội bóng'],
+        dashboard: ['Dashboard Tổng Quan', isAdmin ? 'Hệ thống quản lý tài chính & lịch thi đấu đội bóng' : 'Lịch thi đấu, kết quả & thành tích đội bóng'],
         history: ['Lịch Sử Trận Đấu', `Kết quả các trận nội bộ ${sideVs()} và giao hữu đội ngoài`],
         vote: [`Vote ${sideVs()} & Chia Đội`, 'Điểm danh tham gia và hệ thống random chia đội cân bằng'],
         players: ['Quản Lý Thành Viên', 'Danh sách thành viên và phân loại định mức quỹ'],
@@ -3421,9 +3522,81 @@
         </div>
       </div>
     </div>
+    ${matchCountdownHtml(m.date, m.time)}
   `).join('') || '<div style="text-align:center; color:var(--text-muted); padding:20px;">Không có lịch sắp tới</div>';
 
+      renderUserDashboard(upcoming[0]);
       renderMatchResults();
+    }
+
+    function daysUntil(dateStr) {
+      const today = new Date(toISODate(new Date()) + 'T00:00:00');
+      return Math.round((new Date(dateStr + 'T00:00:00') - today) / 86400000);
+    }
+    function countdownLabel(dateStr) {
+      const d = daysUntil(dateStr);
+      return d <= 0 ? 'Hôm nay' : d === 1 ? 'Ngày mai' : `Còn ${d} ngày`;
+    }
+    function matchCountdownHtml(dateStr, time) {
+      const d = daysUntil(dateStr);
+      const msg = d <= 0 ? `Đá <b>hôm nay</b> lúc ${escapeHtml(time || '--:--')}, anh em có mặt đúng giờ nhé!`
+        : d === 1 ? `<b>Ngày mai</b> ra sân lúc ${escapeHtml(time || '--:--')}`
+          : `Còn <b>${d}</b> ngày nữa là ra sân`;
+      return `<div class="match-countdown"><i class="fa-solid fa-hourglass-half" style="color:var(--accent-emerald); font-size:16px;"></i><span>${msg}</span></div>`;
+    }
+
+    // "Hùng 2, Nam, Tuấn x3" -> [{ name: 'Hùng', n: 2 }, { name: 'Nam', n: 1 }, { name: 'Tuấn', n: 3 }]
+    function parseScorers(str) {
+      return String(str || '').split(/[,;\n]/).map(s => s.trim()).filter(Boolean).map(s => {
+        const m = s.match(/^(.*?)\s*[x×(]?\s*(\d+)\s*\)?$/i);
+        return m && m[1].trim() ? { name: m[1].trim(), n: Number(m[2]) } : { name: s, n: 1 };
+      });
+    }
+
+    // Tổng Quan cho người xem: dải thống kê (không có tiền) + Bảng Vinh Danh.
+    function renderUserDashboard(nextMatch) {
+      const all = state.matchResults || [];
+      const tally = list => list.reduce((t, r) => {
+        const a = Number(r.scoreA) || 0, b = Number(r.scoreB) || 0;
+        if (a > b) t.a++; else if (a < b) t.b++; else t.d++;
+        return t;
+      }, { a: 0, d: 0, b: 0 });
+      const internal = tally(all.filter(r => r.kind === 'internal'));
+      const away = tally(all.filter(r => r.kind !== 'internal'));
+      const muted = s => `<span style="font-size:13px; color:var(--text-muted); font-weight:600;">${s}</span>`;
+
+      document.getElementById('uStatPlayers').innerHTML = activePlayers().length + ' ' + muted('đang đá');
+      document.getElementById('uStatNext').innerHTML = nextMatch
+        ? `${fmtDate(nextMatch.date).slice(0, 5)} ${muted('· ' + countdownLabel(nextMatch.date))}` : '--';
+      document.getElementById('uStatInternalLbl').textContent = `${sideA()} vs ${sideB()}`;
+      document.getElementById('uStatInternal').innerHTML = `${internal.a} - ${internal.b} ${muted(internal.d + ' hòa')}`;
+      document.getElementById('uStatAway').innerHTML = `${away.a} - ${away.d} - ${away.b}`;
+
+      // Bảng vinh danh: gộp tên không phân biệt hoa thường.
+      const count = (map, name, n) => {
+        const key = name.toLowerCase().replace(/\s+/g, ' ');
+        (map[key] = map[key] || { name, n: 0 }).n += n;
+      };
+      const goals = {}, mvps = {};
+      all.forEach(r => {
+        parseScorers(r.scorers).forEach(s => count(goals, s.name, s.n));
+        if (r.mvp && String(r.mvp).trim()) count(mvps, String(r.mvp).trim(), 1);
+      });
+      const medal = ['🥇', '🥈', '🥉'];
+      const top = (map, unit) => {
+        const list = Object.values(map).sort((x, y) => y.n - x.n || x.name.localeCompare(y.name)).slice(0, 5);
+        return list.map((x, i) => `
+          <div class="honor-row">
+            <span class="honor-rank">${medal[i] || i + 1}</span>
+            <span class="name">${escapeHtml(x.name)}</span>
+            <span class="val">${x.n} ${unit}</span>
+          </div>`).join('') || '<div style="font-size:12px; color:var(--text-muted); padding:8px 0;">Chưa có dữ liệu</div>';
+      };
+      document.getElementById('dashHonorBoard').innerHTML = `
+        <div class="honor-grid">
+          <div><div class="honor-title"><i class="fa-solid fa-futbol"></i> Vua phá lưới</div>${top(goals, 'bàn')}</div>
+          <div><div class="honor-title"><i class="fa-solid fa-star" style="color:var(--accent-amber);"></i> Cầu thủ xuất sắc</div>${top(mvps, 'lần')}</div>
+        </div>`;
     }
 
     /* LỊCH SỬ TRẬN ĐẤU
@@ -3444,6 +3617,8 @@
       const activeNav = document.querySelector('.nav-item.active');
       const tab = activeNav && activeNav.dataset.tab;
       // Cập nhật tiêu đề trang đang mở (không gọi switchTab để khỏi cuộn lên đầu trang).
+      if (tab === 'dashboard') document.getElementById('pageSub').textContent = isAdmin
+        ? 'Hệ thống quản lý tài chính & lịch thi đấu đội bóng' : 'Lịch thi đấu, kết quả & thành tích đội bóng';
       if (tab === 'vote') document.getElementById('pageTitle').textContent = `Vote ${sideVs()} & Chia Đội`;
       if (tab === 'history') document.getElementById('pageSub').textContent = `Kết quả các trận nội bộ ${sideVs()} và giao hữu đội ngoài`;
     }
