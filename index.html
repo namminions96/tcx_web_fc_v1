@@ -2363,7 +2363,7 @@
               <div class="card-header">
                 <h3><i class="fa-solid fa-calendar-days"></i> Lịch Thi Đấu</h3>
                 <div style="display: flex; gap: 6px;">
-                  <button class="btn btn-secondary btn-sm admin-only" onclick="app.openScheduleShare()" title="Copy tin nhắn Zalo nhắc lịch đá"><i
+                  <button class="btn btn-secondary btn-sm" onclick="app.openScheduleShare()" title="Copy tin nhắn Zalo nhắc lịch đá"><i
                       class="fa-solid fa-copy"></i></button>
                   <button class="btn btn-sm admin-only" onclick="app.openMatchModal()"><i class="fa-solid fa-plus"></i>
                     Thêm</button>
@@ -3402,6 +3402,30 @@
         .slice(0, limit);
     }
 
+    /* Buổi đã đá (trong 14 ngày qua, không bị hủy) mà CHƯA nhập kết quả -> hiện nút "Nhập tỉ số".
+       Coi là đã nhập nếu Lịch Sử Trận Đấu có kết quả cùng ngày. Mới nhất lên trước. */
+    function pendingResultMatches() {
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      const todayISO = toISODate(today);
+      const from = new Date(today); from.setDate(from.getDate() - 14);
+      const fromISO = toISODate(from);
+      const list = [];
+      if (state.schedule.fixedEnabled) {
+        const d = new Date(today);
+        d.setDate(d.getDate() - ((d.getDay() + 7) % 7 || 7)); // Chủ Nhật gần nhất trước hôm nay
+        for (; toISODate(d) >= fromISO; d.setDate(d.getDate() - 7)) {
+          const iso = toISODate(d);
+          if ((state.cancelledFixedMatches || []).includes(iso)) continue;
+          list.push({ id: 'fixed_' + iso, date: iso, time: state.schedule.fixedTime, opponent: state.schedule.fixedLabel || 'Lịch cố định', type: 'fixed' });
+        }
+      }
+      (state.matches || []).forEach(m => {
+        if (m.date < todayISO && m.date >= fromISO) list.push({ ...m, type: 'extra' });
+      });
+      const resultDates = new Set((state.matchResults || []).map(r => r.date));
+      return list.filter(m => !resultDates.has(m.date)).sort((a, b) => b.date.localeCompare(a.date));
+    }
+
     /* NAVIGATION & UI */
     // Người xem (chưa đăng nhập Admin) chỉ được vào các trang không có thông tin quỹ.
     const USER_TABS = ['dashboard', 'history', 'players'];
@@ -3629,9 +3653,10 @@
   `).join('') || '<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">Chưa có giao dịch</td></tr>';
 
       // Matches Schedule
-      // Chỉ hiện 1 trận sắp tới (bỏ qua trận đã hủy) để nhường chỗ cho card Kết Quả Gần Đây.
-      const upcoming = getUpcomingMatches(10).filter(m => !m.isCancelled).slice(0, 1);
-      document.getElementById('dashScheduleList').innerHTML = upcoming.map(m => `
+      // Hiện tối đa 3 trận sắp tới (bỏ qua trận đã hủy), gồm cả trận thêm ngoài lịch cố định.
+      // Đếm ngược chỉ hiện ở trận gần nhất; mỗi trận có nút copy tin nhắn Zalo riêng (admin).
+      const upcoming = getUpcomingMatches(10).filter(m => !m.isCancelled).slice(0, 3);
+      document.getElementById('dashScheduleList').innerHTML = upcoming.map((m, i) => `
     <div class="match-item" style="${m.isCancelled ? 'opacity: 0.55; filter: grayscale(50%); background: rgba(0, 0, 0, 0.3);' : ''}">
       <div class="match-date-badge" style="${m.isCancelled ? 'background: rgba(255, 77, 109, 0.15); border-color: rgba(255, 77, 109, 0.3); color: var(--accent-rose);' : ''}">
         <div class="day">${weekdayVN(m.date)}</div>
@@ -3651,7 +3676,9 @@
           ? '<span class="badge badge-danger"><i class="fa-solid fa-ban"></i> Đã Hủy</span>'
           : (m.type === 'fixed' ? '<span class="badge badge-info">Cố định</span>' : '<span class="badge badge-gray">Giữa tuần</span>')
         }
+        <button class="btn btn-secondary btn-sm" style="padding:4px 8px; font-size:11px;" onclick="app.openScheduleShare('${m.id}')" title="Copy tin nhắn Zalo cho trận này"><i class="fa-solid fa-share-nodes"></i></button>
         <div class="admin-only" style="display:inline-flex; gap:4px;">
+          ${m.date <= toISODate(new Date()) && !(state.matchResults || []).some(r => r.date === m.date) ? `<button class="btn btn-sm" style="padding:4px 8px; font-size:11px;" onclick="app.openResultForMatch('${m.id}')" title="Nhập tỉ số trận hôm nay"><i class="fa-solid fa-futbol"></i> Nhập tỉ số</button>` : ''}
           ${m.type === 'fixed'
           ? (m.isCancelled
             ? `<button class="btn btn-secondary btn-sm" style="padding:4px 8px; font-size:11px;" onclick="app.restoreFixedMatch('${m.date}')" title="Khôi phục trận này"><i class="fa-solid fa-rotate-left"></i> Khôi phục</button>`
@@ -3662,8 +3689,29 @@
         </div>
       </div>
     </div>
-    ${matchCountdownHtml(m.date, m.time)}
+    ${i === 0 ? matchCountdownHtml(m.date, m.time) : ''}
   `).join('') || '<div style="text-align:center; color:var(--text-muted); padding:20px;">Không có lịch sắp tới</div>';
+
+      // Buổi đã đá mà chưa nhập kết quả (chỉ Admin thấy)
+      const pending = pendingResultMatches();
+      if (pending.length) {
+        document.getElementById('dashScheduleList').innerHTML += `
+          <div class="admin-only" style="margin-top:14px;">
+            <div class="honor-title"><i class="fa-solid fa-clipboard-check" style="color:var(--accent-amber);"></i> Đã đá, chưa nhập tỉ số</div>
+            ${pending.map(m => `
+              <div class="match-item" style="opacity:0.9;">
+                <div class="match-date-badge" style="background:rgba(255,183,3,0.12); border-color:rgba(255,183,3,0.3); color:var(--accent-amber);">
+                  <div class="day">${weekdayVN(m.date)}</div>
+                  <div class="date">${fmtDate(m.date).slice(0, 5)}</div>
+                </div>
+                <div style="flex:1; min-width:0;">
+                  <div style="font-weight:700; font-size:14px;">${escapeHtml(m.opponent)}</div>
+                  <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">${m.type === 'fixed' ? 'Nội bộ ' + escapeHtml(sideVs()) : 'Đá đối'}</div>
+                </div>
+                <button class="btn btn-sm" onclick="app.openResultForMatch('${m.id}')"><i class="fa-solid fa-futbol"></i> Nhập tỉ số</button>
+              </div>`).join('')}
+          </div>`;
+      }
 
       renderUserDashboard(upcoming[0]);
       renderMatchResults();
@@ -5976,28 +6024,24 @@
         const ym = document.getElementById('reportMonthPicker').value || currentMonthKey();
         app.openShareModal(app.monthlyReportText(ym), 'Báo Cáo Quỹ Tháng');
       },
-      // Nhắc lịch đá: trận sắp tới gần nhất (bỏ trận đã hủy) + vài trận tiếp theo.
-      scheduleShareText() {
-        const list = getUpcomingMatches(10).filter(m => !m.isCancelled).slice(0, 3);
-        if (!list.length) return '';
-        const [m, ...more] = list;
+      // Nhắc lịch đá: chỉ trận được chọn (mặc định trận gần nhất, bỏ trận đã hủy).
+      scheduleShareText(matchId) {
+        const all = getUpcomingMatches(10).filter(m => !m.isCancelled);
+        const m = (matchId && all.find(x => x.id === matchId)) || all[0];
+        if (!m) return '';
         const line = '═════════════════════════';
         let txt = `⚽ ${(state.teamName || 'FC Vui Vẻ').toUpperCase()} - LỊCH RA SÂN ⚽\n`;
-        txt += `🏟️ ${m.opponent || 'Buổi đá'}\n`;
+        txt += m.type === 'fixed' ? `🏟️ ${m.opponent || 'Buổi đá'}\n` : `🆚 ${m.opponent || 'Trận đấu'}\n`;
         txt += `📅 ${weekdayVN(m.date)}, ${fmtDate(m.date)}\n`;
         txt += `⏰ ${m.time || '--:--'}\n`;
         if (m.location) txt += `📍 ${m.location}\n`;
         txt += `⏳ ${countdownLabel(m.date)}\n`;
-        if (more.length) {
-          txt += `${line}\n🗓️ Các buổi tiếp theo:\n`;
-          more.forEach(x => { txt += `  • ${weekdayVN(x.date)} ${fmtDate(x.date).slice(0, 5)} - ${x.time || '--:--'} - ${x.opponent || 'Buổi đá'}\n`; });
-        }
         txt += `${line}\n🙋 Anh em báo danh trong nhóm để admin chia đội nhé!\n`;
         txt += `🌐 Xem lịch & kết quả: ${location.origin}${location.pathname}`;
         return txt;
       },
-      openScheduleShare() {
-        const txt = app.scheduleShareText();
+      openScheduleShare(matchId) {
+        const txt = app.scheduleShareText(matchId);
         if (!txt) { alert('Chưa có lịch đá sắp tới.'); return; }
         app.openShareModal(txt, 'Nhắc Lịch Đá');
       },
@@ -6179,8 +6223,16 @@
             : `Lưu danh sách tham gia từ tab Vote (${l.teamA.length} người)`;
         }
       },
-      openResultModal(id, presetKind) {
+      // Nhập tỉ số từ 1 buổi trong lịch: buổi cố định -> trận nội bộ, trận thêm -> đá đối (điền sẵn ngày & đối thủ).
+      openResultForMatch(matchId) {
+        const m = [...getUpcomingMatches(10), ...pendingResultMatches()].find(x => x.id === matchId);
+        if (!m) return;
+        app.openResultModal(null, m.type === 'fixed' ? 'internal' : 'friendly',
+          { date: m.date, opponent: m.type === 'fixed' ? '' : m.opponent });
+      },
+      openResultModal(id, presetKind, prefill) {
         if (!isAdmin) { alert('🔒 Bạn cần đăng nhập Admin để thực hiện!'); return; }
+        prefill = prefill || {};
         const r = id ? (state.matchResults || []).find(x => x.id === id) : null;
         const kind = r ? r.kind : (presetKind || 'internal');
         // Tiền sân: trận đã ghi -> hiện đúng số đã ghi; trận mới -> tích sẵn nếu có tiền sân mặc định.
@@ -6202,11 +6254,11 @@
       </div>
       <div class="form-group">
         <label>Ngày đá</label>
-        <input type="date" id="rs_date" value="${r ? val(r.date) : toISODate(new Date())}">
+        <input type="date" id="rs_date" value="${r ? val(r.date) : (prefill.date || toISODate(new Date()))}">
       </div>
       <div class="form-group" id="rs_opponent_group">
         <label>Đội đối thủ</label>
-        <input type="text" id="rs_opponent" placeholder="VD: FC Mỹ Đình" value="${r ? val(r.opponent) : ''}">
+        <input type="text" id="rs_opponent" placeholder="VD: FC Mỹ Đình" value="${r ? val(r.opponent) : val(prefill.opponent || '')}">
       </div>
       <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
         <div class="form-group">
