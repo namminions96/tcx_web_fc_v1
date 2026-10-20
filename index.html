@@ -1156,8 +1156,49 @@
     /* Bảng vinh danh */
     .honor-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
       gap: 18px;
+    }
+
+    /* Danh sách nợ quỹ: mỗi người 1 dòng, mỗi tháng nợ 1 ô tích bỏ qua */
+    .debt-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding: 10px 0;
+      border-bottom: 1px dashed var(--card-border);
+    }
+
+    .debt-name { min-width: 110px; }
+    .debt-items { display: flex; gap: 8px; flex-wrap: wrap; flex: 1; }
+    .debt-total { color: var(--accent-rose); white-space: nowrap; }
+
+    .debt-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin: 0;
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 500;
+      text-transform: none;
+      color: #ff8599;
+      background: rgba(255, 77, 109, 0.1);
+      border: 1px solid rgba(255, 77, 109, 0.25);
+      cursor: pointer;
+    }
+
+    .debt-item input { width: auto; margin: 0; accent-color: var(--accent-emerald); cursor: pointer; }
+
+    .player-link {
+      cursor: pointer;
+      border-bottom: 1px dashed rgba(255, 255, 255, 0.3);
+    }
+
+    .player-link:hover {
+      color: var(--accent-emerald);
     }
 
     @media (max-width: 600px) {
@@ -2244,6 +2285,16 @@
           <div id="dashPartyList"></div>
         </div>
 
+        <!-- NỢ QUỸ CÁC THÁNG TRƯỚC (chỉ hiện khi có người nợ) -->
+        <div class="glass-card admin-only" id="dashDebtCard" style="display: none; margin-bottom: 24px; border-color: rgba(255, 77, 109, 0.35);">
+          <div class="card-header">
+            <h3><i class="fa-solid fa-file-invoice-dollar" style="color: var(--accent-rose);"></i> Còn Nợ Quỹ Các Tháng Trước</h3>
+            <span class="badge badge-danger" id="dashDebtTotal"></span>
+          </div>
+          <div id="dashDebtList"></div>
+          <div style="font-size: 11px; color: var(--text-muted); margin-top: 10px;">Tích vào khoản nào để bỏ qua (VD vào đội giữa tháng chỉ cần đóng một phần). Hoặc ghi chữ "miễn" vào ô Ghi chú của người đó ở tháng đó.</div>
+        </div>
+
         <!-- EXTRA FUND PROGRESS (chỉ hiện khi còn quỹ phụ chưa thu đủ) -->
         <div class="glass-card admin-only" id="dashFundCard" style="display: none; margin-bottom: 24px; border-color: rgba(255, 183, 3, 0.35);">
           <div class="card-header">
@@ -2311,8 +2362,12 @@
             <div class="glass-card dash-sched-card">
               <div class="card-header">
                 <h3><i class="fa-solid fa-calendar-days"></i> Lịch Thi Đấu</h3>
-                <button class="btn btn-sm admin-only" onclick="app.openMatchModal()"><i class="fa-solid fa-plus"></i>
-                  Thêm</button>
+                <div style="display: flex; gap: 6px;">
+                  <button class="btn btn-secondary btn-sm admin-only" onclick="app.openScheduleShare()" title="Copy tin nhắn Zalo nhắc lịch đá"><i
+                      class="fa-solid fa-copy"></i></button>
+                  <button class="btn btn-sm admin-only" onclick="app.openMatchModal()"><i class="fa-solid fa-plus"></i>
+                    Thêm</button>
+                </div>
               </div>
               <div style="margin-bottom: 14px; display: flex; gap: 8px;">
                 <button class="btn btn-secondary btn-sm admin-only" style="width: 100%; justify-content: center;"
@@ -2525,6 +2580,10 @@
                 <button class="btn btn-secondary btn-sm admin-only" onclick="app.randomSplitTeams()" title="Bốc thăm chia lại một lần nữa">
                   <i class="fa-solid fa-shuffle"></i> Chia Lại
                 </button>
+                <label class="admin-only" style="display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text-muted); cursor:pointer; margin:0; text-transform:none;"
+                  title="Dựa vào kết quả các trận nội bộ gần đây để 2 đội cân sức hơn">
+                  <input type="checkbox" id="splitByForm" checked style="width:auto;"> Cân theo phong độ
+                </label>
               </div>
 
               <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
@@ -2634,6 +2693,8 @@
               <button class="btn admin-only" onclick="app.commitMonthToLedger()"><i class="fa-solid fa-sync"></i> Đồng
                 Bộ Sổ Thu
                 Chi</button>
+              <button class="btn btn-secondary admin-only" onclick="app.openMonthlyShare()"><i class="fa-solid fa-copy"></i>
+                Copy Zalo</button>
               <button class="btn btn-danger admin-only" onclick="app.closeFeePeriod()"><i class="fa-solid fa-lock"></i>
                 Đóng Kỳ Quỹ</button>
             </div>
@@ -2657,6 +2718,14 @@
                   Tổng Tiền Đã Thu</div>
                 <div style="font-size: 15px; font-weight: 800; color: var(--accent-emerald);" id="monthStatTotal">0 ₫
                 </div>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <i class="fa-solid fa-file-invoice-dollar" style="color: var(--accent-rose); font-size: 20px;"></i>
+              <div>
+                <div style="font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">
+                  Nợ Các Tháng Trước</div>
+                <div style="font-size: 15px; font-weight: 800; color: var(--accent-rose);" id="monthStatDebt">0 ₫</div>
               </div>
             </div>
           </div>
@@ -2706,6 +2775,18 @@
 
       <!-- VIEW 4: LEDGER -->
       <div class="view" id="view-ledger">
+        <!-- BÁO CÁO QUỸ THEO THÁNG -->
+        <div class="glass-card" style="margin-bottom: 24px;">
+          <div class="card-header" style="flex-wrap: wrap; gap: 10px;">
+            <h3><i class="fa-solid fa-chart-column"></i> Báo Cáo Quỹ Tháng</h3>
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+              <select id="reportMonthPicker" onchange="renderMonthlyReport()" style="width: auto; min-width: 140px;"></select>
+              <button class="btn btn-secondary" onclick="app.openReportShare()"><i class="fa-solid fa-copy"></i> Copy Zalo</button>
+            </div>
+          </div>
+          <div id="monthlyReportBody"></div>
+        </div>
+
         <div class="glass-card">
           <div class="card-header">
             <h3><i class="fa-solid fa-book-journal-whills"></i> Sổ Thu Chi Quỹ</h3>
@@ -2762,6 +2843,10 @@
             <div class="form-group">
               <label>Mức Thu Quỹ Định Kỳ Mặc Định (VNĐ)</label>
               <input type="number" id="settingDefaultFee">
+            </div>
+            <div class="form-group">
+              <label>Tiền Sân Mặc Định Mỗi Buổi (VNĐ) <small style="text-transform:none; font-weight:400; color:var(--text-muted);">(để ghi chi nhanh khi nhập kết quả trận, 0 = không dùng)</small></label>
+              <input type="number" id="settingFieldFee" placeholder="VD: 1200000">
             </div>
             <div class="form-group">
               <label>Tên 2 Đội Nội Bộ <small style="text-transform:none; font-weight:400; color:var(--text-muted);">(dùng cho Vote chia đội & kết quả nội bộ)</small></label>
@@ -3003,6 +3088,10 @@
       state.sheetSync.autoPush = Number(cfg.autoPush) === 1;
     }
 
+    // true khi máy này đang giữ dữ liệu quỹ ĐẦY ĐỦ (tải bằng quyền Admin, hoặc không dùng Sheet).
+    // Chỉ khi true mới được đẩy lên Sheet, tránh đẩy bản công khai (không có sổ quỹ) đè mất dữ liệu.
+    let fullDataLoaded = !state.sheetSync.url;
+
     function encodeData(obj) {
       try {
         const json = JSON.stringify(obj);
@@ -3042,7 +3131,7 @@
       renderAll();
       // Chỉ admin (đã nhập đúng mật khẩu) mới đẩy được lên Sheet; người xem thì bỏ qua
       // để không gọi máy chủ vô ích và không nhận lỗi "Sai mật khẩu quản trị".
-      if (state.sheetSync && state.sheetSync.autoPush && state.sheetSync.url && isAdmin && getAdminPass()) {
+      if (state.sheetSync && state.sheetSync.autoPush && state.sheetSync.url && isAdmin && getAdminPass() && fullDataLoaded) {
         clearTimeout(window._autoPushTimer);
         window._autoPushTimer = setTimeout(() => app.pushToSheet(true), 1500);
       }
@@ -3201,6 +3290,38 @@
     function sortedParties() {
       return [...(state.parties || [])].sort((a, b) => (b.date || '').localeCompare(a.date || '') || (b.id || '').localeCompare(a.id || ''));
     }
+
+    /* NỢ QUỸ CÁC THÁNG TRƯỚC (trước kỳ đang thu).
+       Mỗi người chỉ bị tính từ tháng ĐẦU TIÊN họ có đóng quỹ trở đi (người mới vào không bị tính tháng cũ).
+       Tháng nào ghi chú có chữ "miễn" thì bỏ qua. Đóng thiếu thì tính phần còn thiếu.
+       Trả về [{ player, items: [{ mk, owe }], total }], nợ nhiều nhất lên trước. */
+    function outstandingDebts() {
+      const active = activeFeeMonthKey();
+      const months = allMonthKeysSorted().filter(mk => mk < active);
+      const firstPaid = {};
+      allMonthKeysSorted().forEach(mk => {
+        Object.entries(state.monthlyRecords[mk] || {}).forEach(([pid, e]) => {
+          if (Number(e && e.amount) > 0 && !firstPaid[pid]) firstPaid[pid] = mk;
+        });
+      });
+      const out = [];
+      state.players.forEach(p => {
+        if (!firstPaid[p.id]) return;
+        const items = [];
+        months.forEach(mk => {
+          if (mk < firstPaid[p.id] || isPlayerPausedIn(p, mk)) return;
+          const e = (state.monthlyRecords[mk] || {})[p.id] || {};
+          if (isWaived(e.note)) return;
+          const owe = playerFee(p, mk) - (Number(e.amount) || 0);
+          if (owe > 0) items.push({ mk, owe });
+        });
+        if (items.length) out.push({ player: p, items, total: items.reduce((s, x) => s + x.owe, 0) });
+      });
+      return out.sort((a, b) => b.total - a.total);
+    }
+    // Ghi chú có chữ "miễn" (có dấu hay không) = tháng đó không tính nợ / bỏ qua phần đóng thiếu.
+    function isWaived(note) { return /mien/i.test(noAccent(note || '')); }
+    function shortMonth(mk) { const [y, m] = mk.split('-'); return `T${parseInt(m, 10)}/${y.slice(2)}`; }
 
     /* QUỸ PHỤ (mua bóng, đổi sân...)
        state.extraFunds = [{ id, title, date, amount, note, members: [{ id, playerId, name, paid }] }]
@@ -3394,6 +3515,7 @@
       renderParties();
       renderExtraFunds();
       renderLedger();
+      renderMonthlyReport();
       renderSettings();
     }
 
@@ -3434,6 +3556,24 @@
           return `<div class="unpaid-pill"><span class="avatar">${initial}</span>${escapeHtml(p.name)}</div>`;
         }).join('');
       }
+
+      // Nợ quỹ các tháng trước
+      const debts = outstandingDebts();
+      document.getElementById('dashDebtCard').style.display = debts.length ? '' : 'none';
+      document.getElementById('dashDebtTotal').textContent = `${debts.length} người · ${fmtVND(debts.reduce((s, d) => s + d.total, 0))}`;
+      // Mỗi tháng nợ 1 ô tích "Bỏ qua": dùng cho người vào đội giữa tháng chỉ cần đóng một phần, v.v.
+      document.getElementById('dashDebtList').innerHTML = debts.map(d => `
+        <div class="debt-row">
+          <b class="debt-name">${escapeHtml(d.player.name)}</b>
+          <div class="debt-items">${d.items.map(x => {
+            const paid = Number(((state.monthlyRecords[x.mk] || {})[d.player.id] || {}).amount) || 0;
+            return `<label class="debt-item" title="Tích để bỏ qua khoản thiếu này (ghi chú 'Miễn phần thiếu' vào tháng đó)">
+              <input type="checkbox" onchange="app.waiveDebt('${d.player.id}', '${x.mk}', this)">
+              ${shortMonth(x.mk)}: ${paid ? `đóng ${fmtVND(paid)}, thiếu` : 'chưa đóng'} <b>${fmtVND(x.owe)}</b>
+            </label>`;
+          }).join('')}</div>
+          <b class="debt-total">${fmtVND(d.total)}</b>
+        </div>`).join('');
 
       // Extra Fund: thông báo các quỹ phụ còn người chưa đóng
       const openFunds = sortedFunds().filter(f => fundStats(f).unpaid.length > 0);
@@ -3553,6 +3693,67 @@
       });
     }
 
+    /* THỐNG KÊ CẦU THỦ từ lịch sử trận (khớp tên không phân biệt hoa thường / khoảng trắng).
+       Có mặt = tên nằm trong đội hình đã lưu. Nội bộ: thắng/thua theo phía mình đá; đá đối: teamA là đội mình.
+       Tỉ lệ có mặt = số trận có mặt / số trận có lưu đội hình kể từ trận đầu tiên người đó xuất hiện. */
+    function nameKey(s) { return String(s || '').trim().toLowerCase().replace(/\s+/g, ' '); }
+    function playerStats() {
+      const stats = {};
+      const get = name => stats[nameKey(name)] || (stats[nameKey(name)] = {
+        name: String(name).trim(), played: 0, w: 0, d: 0, l: 0, goals: 0, mvp: 0, first: null, recent: []
+      });
+      const results = [...(state.matchResults || [])].sort((x, y) => (x.date || '').localeCompare(y.date || ''));
+      const lineupDates = [];
+      results.forEach(r => {
+        const a = Number(r.scoreA) || 0, b = Number(r.scoreB) || 0;
+        const sides = r.kind === 'internal' ? [[r.teamA || [], a - b], [r.teamB || [], b - a]] : [[r.teamA || [], a - b]];
+        if ((r.teamA || []).length || (r.teamB || []).length) lineupDates.push(r.date || '');
+        sides.forEach(([names, diff]) => names.forEach(n => {
+          if (/\(kh[aá]ch\)\s*$/i.test(n)) return; // khách mời không tính
+          const s = get(n);
+          s.played++;
+          if (diff > 0) s.w++; else if (diff < 0) s.l++; else s.d++;
+          if (!s.first) s.first = r.date || '';
+          s.recent.push({ date: r.date, res: diff > 0 ? 'w' : diff < 0 ? 'l' : 'd', kind: r.kind, opponent: r.opponent, score: `${a}-${b}` });
+        }));
+        parseScorers(r.scorers).forEach(x => { get(x.name).goals += x.n; });
+        if (r.mvp && String(r.mvp).trim()) get(r.mvp).mvp++;
+      });
+      Object.values(stats).forEach(s => {
+        const possible = s.first ? lineupDates.filter(d => d >= s.first).length : 0;
+        s.rate = possible ? Math.round(s.played / possible * 100) : 0;
+        s.recent = s.recent.slice(-5).reverse();
+      });
+      return stats;
+    }
+
+    /* ĐIỂM PHONG ĐỘ dùng để chia đội: 10 trận nội bộ gần nhất người đó có mặt.
+       Điểm/trận (thắng 3, hòa 1) + 0.5 x bàn/trận. Chưa có dữ liệu -> null (dùng điểm trung bình). */
+    function playerFormScore(name) {
+      const key = nameKey(name);
+      const games = sortedMatchResults().filter(r => r.kind === 'internal'
+        && [...(r.teamA || []), ...(r.teamB || [])].some(n => nameKey(n) === key)).slice(0, 10);
+      if (!games.length) return null;
+      let pts = 0, goals = 0;
+      games.forEach(r => {
+        const a = Number(r.scoreA) || 0, b = Number(r.scoreB) || 0;
+        const onA = (r.teamA || []).some(n => nameKey(n) === key);
+        const diff = onA ? a - b : b - a;
+        pts += diff > 0 ? 3 : diff === 0 ? 1 : 0;
+        parseScorers(r.scorers).forEach(x => { if (nameKey(x.name) === key) goals += x.n; });
+      });
+      return pts / games.length + 0.5 * goals / games.length;
+    }
+
+    // Điểm phong độ cho 1 danh sách tên; ai chưa có dữ liệu (người mới, khách) lấy điểm trung bình.
+    function formScoresFor(names) {
+      const known = {};
+      names.forEach(n => { const s = playerFormScore(n.replace(/\s*\(Khách\)\s*$/i, '')); if (s != null) known[n] = s; });
+      const vals = Object.values(known);
+      const avg = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 1.5;
+      return { get: n => (n in known ? known[n] : avg), hasData: vals.length > 0 };
+    }
+
     // Tổng Quan cho người xem: dải thống kê (không có tiền) + Bảng Vinh Danh.
     function renderUserDashboard(nextMatch) {
       const all = state.matchResults || [];
@@ -3573,18 +3774,12 @@
       document.getElementById('uStatAway').innerHTML = `${away.a} - ${away.d} - ${away.b}`;
 
       // Bảng vinh danh: gộp tên không phân biệt hoa thường.
-      const count = (map, name, n) => {
-        const key = name.toLowerCase().replace(/\s+/g, ' ');
-        (map[key] = map[key] || { name, n: 0 }).n += n;
-      };
-      const goals = {}, mvps = {};
-      all.forEach(r => {
-        parseScorers(r.scorers).forEach(s => count(goals, s.name, s.n));
-        if (r.mvp && String(r.mvp).trim()) count(mvps, String(r.mvp).trim(), 1);
-      });
+      const ps = Object.values(playerStats());
+      const pick = field => ps.filter(s => s[field] > 0).map(s => ({ name: s.name, n: s[field] }));
+      const goals = pick('goals'), mvps = pick('mvp'), played = pick('played');
       const medal = ['🥇', '🥈', '🥉'];
       const top = (map, unit) => {
-        const list = Object.values(map).sort((x, y) => y.n - x.n || x.name.localeCompare(y.name)).slice(0, 5);
+        const list = [...map].sort((x, y) => y.n - x.n || x.name.localeCompare(y.name)).slice(0, 5);
         return list.map((x, i) => `
           <div class="honor-row">
             <span class="honor-rank">${medal[i] || i + 1}</span>
@@ -3596,6 +3791,7 @@
         <div class="honor-grid">
           <div><div class="honor-title"><i class="fa-solid fa-futbol"></i> Vua phá lưới</div>${top(goals, 'bàn')}</div>
           <div><div class="honor-title"><i class="fa-solid fa-star" style="color:var(--accent-amber);"></i> Cầu thủ xuất sắc</div>${top(mvps, 'lần')}</div>
+          <div><div class="honor-title"><i class="fa-solid fa-person-running" style="color:var(--accent-emerald);"></i> Chăm chỉ nhất</div>${top(played, 'trận')}</div>
         </div>`;
     }
 
@@ -3700,6 +3896,7 @@
       </div>
       <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
       ${resultOutcomeBadge(r)}
+      ${app.fieldFeeTx && app.fieldFeeTx(r.id) ? `<span class="badge badge-gray admin-only" title="Đã ghi chi tiền sân"><i class="fa-solid fa-receipt"></i> ${fmtVND(app.fieldFeeTx(r.id).amount)}</span>` : ''}
       <div class="admin-only" style="display:inline-flex; gap:4px;">
         <button class="btn btn-secondary btn-sm" style="padding:4px 8px; font-size:11px;" onclick="app.openResultModal('${r.id}')" title="Sửa kết quả"><i class="fa-solid fa-pen"></i></button>
         <button class="btn btn-danger btn-sm" style="padding:4px 8px; font-size:11px;" onclick="app.deleteResult('${r.id}')" title="Xóa kết quả"><i class="fa-solid fa-trash"></i></button>
@@ -4044,8 +4241,12 @@
       const youngList = (teams.teamYoung || []).map(resolveParticipant).filter(Boolean);
       const benchList = (teams.bench || []).map(resolveParticipant).filter(Boolean);
 
-      if (teamOldBadge) teamOldBadge.textContent = `${oldList.length} Cầu thủ`;
-      if (teamYoungBadge) teamYoungBadge.textContent = `${youngList.length} Cầu thủ`;
+      // Tổng điểm phong độ mỗi đội (chỉ hiện khi có dữ liệu trận nội bộ), giúp nhìn 2 đội có cân không.
+      const forms = formScoresFor([...oldList, ...youngList].map(p => p.name));
+      const formSum = list => list.reduce((s, p) => s + forms.get(p.name), 0);
+      const formTxt = list => forms.hasData && list.length ? ` · ⚡ ${formSum(list).toFixed(1)}` : '';
+      if (teamOldBadge) teamOldBadge.textContent = `${oldList.length} Cầu thủ${formTxt(oldList)}`;
+      if (teamYoungBadge) teamYoungBadge.textContent = `${youngList.length} Cầu thủ${formTxt(youngList)}`;
 
       function renderTacticalBarHtml(list) {
         if (!list || list.length === 0) {
@@ -4141,7 +4342,7 @@
         return `
       <tr class="m-row pl" style="${pause ? 'opacity: 0.6;' : ''}">
         <td>${idx + 1}</td>
-        <td><b>${escapeHtml(p.name)}</b></td>
+        <td><b class="player-link" onclick="app.openPlayerStats('${p.id}')" title="Xem thành tích">${escapeHtml(p.name)}</b></td>
         <td><span class="pos-badge" style="color:${pos.color}; background:${pos.bg}; border:1px solid ${pos.border}; font-size:11px;">${pos.emoji} ${pos.name}</span></td>
         <td class="admin-only"><span class="badge badge-info">${cat ? escapeHtml(cat.name) : 'Mặc định'}</span></td>
         <td class="admin-only"><b>${fmtVND(fee)}</b></td>
@@ -4198,6 +4399,8 @@
             statusBadge = '<span class="badge badge-success"><i class="fa-solid fa-check"></i> Đủ quỹ</span>';
           } else if (currentAmt > fee) {
             statusBadge = '<span class="badge badge-info"><i class="fa-solid fa-plus"></i> Đóng thừa</span>';
+          } else if (isWaived(pData.note)) {
+            statusBadge = '<span class="badge badge-success" title="Đã bỏ qua phần thiếu"><i class="fa-solid fa-check"></i> Đủ (miễn thiếu)</span>';
           } else {
             statusBadge = '<span class="badge" style="background:rgba(255,183,3,0.15); color:var(--accent-amber); border:1px solid rgba(255,183,3,0.3);"><i class="fa-solid fa-minus"></i> Đóng thiếu</span>';
           }
@@ -4240,6 +4443,10 @@
       const totalEl = document.getElementById('monthStatTotal');
       if (countEl) countEl.textContent = `${paidCount}/${monthList.length} Đã Đóng`;
       if (totalEl) totalEl.textContent = fmtVND(totalPaidAmount);
+      const debts = outstandingDebts();
+      const debtEl = document.getElementById('monthStatDebt');
+      if (debtEl) debtEl.textContent = debts.length
+        ? `${fmtVND(debts.reduce((s, d) => s + d.total, 0))} · ${debts.length} người` : 'Không ai nợ';
     }
 
     function renderLedger() {
@@ -4285,6 +4492,7 @@
     function renderSettings() {
       document.getElementById('settingTeamName').value = state.teamName || '';
       document.getElementById('settingDefaultFee').value = state.defaultFee || 300000;
+      document.getElementById('settingFieldFee').value = state.fieldFee || '';
       document.getElementById('settingSideA').value = sideA();
       document.getElementById('settingSideB').value = sideB();
       document.getElementById('syncUrl').value = state.sheetSync.url || '';
@@ -4297,6 +4505,55 @@
       } else {
         status.textContent = 'Chưa đồng bộ lần nào.';
       }
+    }
+
+    /* BÁO CÁO QUỸ THEO THÁNG (theo ngày ghi sổ t.date, dạng YYYY-MM).
+       Tồn đầu kỳ = mọi thu - chi trước tháng; thu/chi trong tháng gom theo danh mục. */
+    function monthlyReport(ym) {
+      const before = state.transactions.filter(t => (t.date || '').slice(0, 7) < ym);
+      const inMonth = state.transactions.filter(t => (t.date || '').slice(0, 7) === ym);
+      const sum = (list, type) => list.filter(t => t.type === type).reduce((s, t) => s + Math.abs(Number(t.amount) || 0), 0);
+      const group = type => {
+        const g = {};
+        inMonth.filter(t => t.type === type).forEach(t => {
+          const k = (t.category || 'Khác').trim();
+          g[k] = (g[k] || 0) + Math.abs(Number(t.amount) || 0);
+        });
+        return Object.entries(g).sort((a, b) => b[1] - a[1]);
+      };
+      const opening = sum(before, 'thu') - sum(before, 'chi');
+      const income = sum(inMonth, 'thu'), expense = sum(inMonth, 'chi');
+      return { opening, income, expense, closing: opening + income - expense, incomeBy: group('thu'), expenseBy: group('chi') };
+    }
+    function reportMonths() {
+      const set = new Set(state.transactions.map(t => (t.date || '').slice(0, 7)).filter(k => /^\d{4}-\d{2}$/.test(k)));
+      set.add(currentMonthKey());
+      return [...set].sort().reverse();
+    }
+    function renderMonthlyReport() {
+      const picker = document.getElementById('reportMonthPicker');
+      const body = document.getElementById('monthlyReportBody');
+      if (!picker || !body) return;
+      const months = reportMonths();
+      const sel = months.includes(picker.value) ? picker.value : months[0];
+      picker.innerHTML = months.map(k => `<option value="${k}" ${k === sel ? 'selected' : ''}>${monthLabel(k)}</option>`).join('');
+      const r = monthlyReport(sel);
+      const groupHtml = (list, color) => list.map(([k, v]) => `
+        <div style="display:flex; justify-content:space-between; gap:10px; padding:6px 0; border-bottom:1px dashed var(--card-border); font-size:13px;">
+          <span>${escapeHtml(k)}</span><b style="color:${color};">${fmtVND(v)}</b>
+        </div>`).join('') || '<div style="font-size:12px; color:var(--text-muted); padding:6px 0;">Không có</div>';
+      const box = (lbl, val, color) => `<div><div style="font-size:11px; color:var(--text-muted); font-weight:600; text-transform:uppercase;">${lbl}</div><div style="font-size:16px; font-weight:800; color:${color};">${fmtVND(val)}</div></div>`;
+      body.innerHTML = `
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:14px; background:rgba(0,0,0,0.25); padding:14px 18px; border-radius:var(--radius-md); border:1px solid var(--card-border); margin-bottom:16px;">
+          ${box('Tồn đầu tháng', r.opening, '#fff')}
+          ${box('Thu trong tháng', r.income, 'var(--accent-emerald)')}
+          ${box('Chi trong tháng', r.expense, 'var(--accent-rose)')}
+          ${box('Tồn cuối tháng', r.closing, 'var(--accent-amber)')}
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:24px;">
+          <div><div class="honor-title"><i class="fa-solid fa-arrow-down" style="color:var(--accent-emerald);"></i> Thu theo mục</div>${groupHtml(r.incomeBy, 'var(--accent-emerald)')}</div>
+          <div><div class="honor-title"><i class="fa-solid fa-arrow-up" style="color:var(--accent-rose);"></i> Chi theo mục</div>${groupHtml(r.expenseBy, 'var(--accent-rose)')}</div>
+        </div>`;
     }
 
     function renderExtraFunds() {
@@ -4686,25 +4943,29 @@
         const teamOld = [];
         const teamYoung = [];
 
+        // Cân theo phong độ: trong từng nhóm vị trí, xếp người mạnh trước (kèm chút ngẫu nhiên để mỗi lần
+        // bốc vẫn khác) và khi 2 đội bằng người thì đưa vào đội đang có tổng điểm thấp hơn.
+        const byForm = !!(document.getElementById('splitByForm') || {}).checked;
+        const forms = formScoresFor(attendees.map(p => p.name));
+        const score = p => forms.get(p.name);
+        let sumOld = 0, sumYoung = 0;
+
         // Cờ luân phiên khi 2 đội đang bằng số lượng cầu thủ
         let preferOld = Math.random() < 0.5;
 
         posOrder.forEach(posKey => {
-          const list = shuffle(groups[posKey]);
+          let list = shuffle(groups[posKey]);
+          if (byForm) {
+            list = list.map(p => ({ p, k: score(p) + Math.random() * 0.6 })).sort((a, b) => b.k - a.k).map(x => x.p);
+          }
           list.forEach(player => {
-            if (teamOld.length < teamYoung.length) {
-              teamOld.push(player.id);
-            } else if (teamYoung.length < teamOld.length) {
-              teamYoung.push(player.id);
-            } else {
-              if (preferOld) {
-                teamOld.push(player.id);
-                preferOld = false;
-              } else {
-                teamYoung.push(player.id);
-                preferOld = true;
-              }
-            }
+            const toOld = teamOld.length < teamYoung.length ? true
+              : teamYoung.length < teamOld.length ? false
+                : byForm ? (sumOld === sumYoung ? preferOld : sumOld < sumYoung)
+                  : preferOld;
+            if (teamOld.length === teamYoung.length) preferOld = !preferOld;
+            if (toOld) { teamOld.push(player.id); sumOld += score(player); }
+            else { teamYoung.push(player.id); sumYoung += score(player); }
           });
         });
 
@@ -5603,6 +5864,162 @@
         `);
       },
 
+      // Thành tích cá nhân (ai cũng xem được, không có thông tin tiền).
+      openPlayerStats(pid) {
+        const p = playerById(pid);
+        if (!p) return;
+        const s = playerStats()[nameKey(p.name)] || { played: 0, w: 0, d: 0, l: 0, goals: 0, mvp: 0, rate: 0, recent: [] };
+        const form = playerFormScore(p.name);
+        const pos = positionById(p.position || 'any');
+        const tile = (v, l, color) => `<div class="away-stat"><div class="v" style="color:${color || '#fff'};">${v}</div><div class="l">${l}</div></div>`;
+        const chip = { w: 'T', d: 'H', l: 'B' };
+        const recent = s.recent.map(x => `
+          <div class="honor-row">
+            <span class="form-chip ${x.res}">${chip[x.res]}</span>
+            <span class="name">${fmtDate(x.date)} · ${x.kind === 'internal' ? escapeHtml(sideVs()) : 'vs ' + escapeHtml(x.opponent || 'Đối thủ')}</span>
+            <span class="val" style="color:#fff;">${x.score}</span>
+          </div>`).join('') || '<div style="font-size:12px; color:var(--text-muted);">Chưa có trận nào lưu đội hình</div>';
+        openModal(`
+          <div class="modal-header">
+            <h3><i class="fa-solid fa-id-card"></i> ${escapeHtml(p.name)}</h3>
+            <i class="fa-solid fa-xmark modal-close" onclick="closeModal()"></i>
+          </div>
+          <div style="margin-bottom:14px;">
+            <span class="pos-badge" style="color:${pos.color}; background:${pos.bg}; border:1px solid ${pos.border}; font-size:12px;">${pos.emoji} ${pos.name}</span>
+            ${form != null ? `<span class="badge badge-info" style="margin-left:6px;">Phong độ ${form.toFixed(1)}</span>` : ''}
+          </div>
+          <div class="away-stats">
+            ${tile(s.played, 'Trận')}
+            ${tile(s.goals, 'Bàn', 'var(--accent-amber)')}
+            ${tile(s.mvp, 'MVP', 'var(--accent-amber)')}
+            ${tile(s.rate + '%', 'Có mặt', 'var(--accent-emerald)')}
+          </div>
+          <div class="away-stats">
+            ${tile(s.w, 'Thắng', 'var(--accent-emerald)')}
+            ${tile(s.d, 'Hòa', '#94a3b8')}
+            ${tile(s.l, 'Thua', 'var(--accent-rose)')}
+            ${tile(s.played ? Math.round(s.w / s.played * 100) + '%' : '-', 'Tỉ lệ thắng')}
+          </div>
+          <div class="honor-title" style="margin-top:6px;">5 trận gần nhất</div>
+          ${recent}
+          <div style="font-size:11px; color:var(--text-muted); margin-top:10px;">Tính từ các trận có lưu đội hình & người ghi bàn trong Lịch Sử Trận Đấu.</div>
+          <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal()">Đóng</button></div>
+        `);
+      },
+
+      // Khung tin nhắn Zalo dùng chung: textarea sửa được + nút Sao Chép.
+      openShareModal(text, title) {
+        openModal(`
+          <div class="modal-header">
+            <h3><i class="fa-solid fa-comment-dots"></i> ${escapeHtml(title || 'Tin Nhắn Gửi Zalo')}</h3>
+            <i class="fa-solid fa-xmark modal-close" onclick="closeModal()"></i>
+          </div>
+          <div class="form-group">
+            <textarea id="share_text" rows="16" style="font-size:13px; line-height:1.5;">${escapeHtml(text)}</textarea>
+            <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Có thể sửa nội dung trước khi sao chép.</div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal()">Đóng</button>
+            <button class="btn" onclick="app.copyText(document.getElementById('share_text').value, '📋 Đã sao chép! Dán ngay vào nhóm Zalo nhé.')"><i class="fa-solid fa-copy"></i> Sao Chép</button>
+          </div>
+        `);
+      },
+      bankLines(info) {
+        const bank = window.BANK_CONFIG || {};
+        if (!bank.accountNumber) return '';
+        return `🏦 CK: ${bank.bankName || ''} - ${bank.accountNumber}${bank.accountName ? ' - ' + bank.accountName : ''}\n`
+          + `📝 Nội dung: ${info}\n`;
+      },
+      // Nhắc đóng quỹ tháng: kỳ đang thu + nợ các tháng trước.
+      monthlyShareText() {
+        const mk = activeFeeMonthKey();
+        const [y, m] = mk.split('-');
+        const rec = state.monthlyRecords[mk] || {};
+        const list = feePlayers(mk);
+        const paid = p => Number(rec[p.id] && rec[p.id].amount) > 0;
+        const unpaid = list.filter(p => !paid(p));
+        const debts = outstandingDebts();
+        const line = '═════════════════════════';
+        let txt = `💰 ${(state.teamName || 'FC Vui Vẻ').toUpperCase()} - NHẮC ĐÓNG QUỸ ${monthLabel(mk).toUpperCase()} 💰\n`;
+        txt += `✅ Đã đóng: ${list.length - unpaid.length}/${list.length} người\n`;
+        txt += `${line}\n`;
+        if (unpaid.length) {
+          txt += `⏳ Chưa đóng ${monthLabel(mk)} (${unpaid.length} người):\n`;
+          unpaid.forEach((p, i) => { txt += `  ${i + 1}. ${p.name} - ${fmtVND(playerFee(p, mk))}\n`; });
+        } else {
+          txt += `🎉 Cả đội đã đóng đủ ${monthLabel(mk)}, cảm ơn anh em!\n`;
+        }
+        if (debts.length) {
+          txt += `${line}\n📌 Còn nợ các tháng trước:\n`;
+          debts.forEach(d => { txt += `  • ${d.player.name}: ${d.items.map(x => shortMonth(x.mk)).join(', ')} - ${fmtVND(d.total)}\n`; });
+        }
+        if (unpaid.length || debts.length) {
+          txt += `${line}\n` + app.bankLines(`[Tên] Dong quy thang ${parseInt(m, 10)}-${y}`);
+          txt += `🙏 Anh em đóng sớm giúp quỹ nhé!`;
+        }
+        return txt.trim();
+      },
+      monthlyReportText(ym) {
+        const r = monthlyReport(ym);
+        const line = '═════════════════════════';
+        let txt = `📊 ${(state.teamName || 'FC Vui Vẻ').toUpperCase()} - BÁO CÁO QUỸ ${monthLabel(ym).toUpperCase()} 📊\n`;
+        txt += `💼 Tồn đầu tháng: ${fmtVND(r.opening)}\n${line}\n`;
+        txt += `⬇️ THU: ${fmtVND(r.income)}\n`;
+        r.incomeBy.forEach(([k, v]) => { txt += `  • ${k}: ${fmtVND(v)}\n`; });
+        txt += `⬆️ CHI: ${fmtVND(r.expense)}\n`;
+        r.expenseBy.forEach(([k, v]) => { txt += `  • ${k}: ${fmtVND(v)}\n`; });
+        txt += `${line}\n💰 TỒN CUỐI THÁNG: ${fmtVND(r.closing)}\n`;
+        txt += `🙏 Cảm ơn anh em đã đóng góp, mọi thắc mắc cứ hỏi trong nhóm nhé!`;
+        return txt;
+      },
+      openReportShare() {
+        const ym = document.getElementById('reportMonthPicker').value || currentMonthKey();
+        app.openShareModal(app.monthlyReportText(ym), 'Báo Cáo Quỹ Tháng');
+      },
+      // Nhắc lịch đá: trận sắp tới gần nhất (bỏ trận đã hủy) + vài trận tiếp theo.
+      scheduleShareText() {
+        const list = getUpcomingMatches(10).filter(m => !m.isCancelled).slice(0, 3);
+        if (!list.length) return '';
+        const [m, ...more] = list;
+        const line = '═════════════════════════';
+        let txt = `⚽ ${(state.teamName || 'FC Vui Vẻ').toUpperCase()} - LỊCH RA SÂN ⚽\n`;
+        txt += `🏟️ ${m.opponent || 'Buổi đá'}\n`;
+        txt += `📅 ${weekdayVN(m.date)}, ${fmtDate(m.date)}\n`;
+        txt += `⏰ ${m.time || '--:--'}\n`;
+        if (m.location) txt += `📍 ${m.location}\n`;
+        txt += `⏳ ${countdownLabel(m.date)}\n`;
+        if (more.length) {
+          txt += `${line}\n🗓️ Các buổi tiếp theo:\n`;
+          more.forEach(x => { txt += `  • ${weekdayVN(x.date)} ${fmtDate(x.date).slice(0, 5)} - ${x.time || '--:--'} - ${x.opponent || 'Buổi đá'}\n`; });
+        }
+        txt += `${line}\n🙋 Anh em báo danh trong nhóm để admin chia đội nhé!\n`;
+        txt += `🌐 Xem lịch & kết quả: ${location.origin}${location.pathname}`;
+        return txt;
+      },
+      openScheduleShare() {
+        const txt = app.scheduleShareText();
+        if (!txt) { alert('Chưa có lịch đá sắp tới.'); return; }
+        app.openShareModal(txt, 'Nhắc Lịch Đá');
+      },
+      // Bỏ qua 1 khoản nợ: ghi "Miễn phần thiếu" vào ghi chú tháng đó (ghi chú có đồng bộ lên Sheet).
+      waiveDebt(pid, mk, el) {
+        if (!isAdmin) { alert('🔒 Bạn cần đăng nhập Admin để thực hiện!'); if (el) el.checked = false; return; }
+        const p = playerById(pid);
+        const paid = Number(((state.monthlyRecords[mk] || {})[pid] || {}).amount) || 0;
+        const msg = paid
+          ? `Bỏ qua phần thiếu ${monthLabel(mk)} của ${p.name}? (đã đóng ${fmtVND(paid)}, coi như đủ)`
+          : `Bỏ qua ${monthLabel(mk)} của ${p.name}? (không tính nợ tháng này)`;
+        if (!confirm(msg)) { if (el) el.checked = false; return; }
+        if (!state.monthlyRecords[mk]) state.monthlyRecords[mk] = {};
+        const e = state.monthlyRecords[mk][pid] || (state.monthlyRecords[mk][pid] = { amount: 0, note: '' });
+        e.note = (e.note ? e.note + ' · ' : '') + (paid ? 'Miễn phần thiếu' : 'Miễn');
+        saveData();
+        showToast(`✅ Đã bỏ qua ${shortMonth(mk)} của ${p.name}`);
+      },
+      openMonthlyShare() {
+        app.openShareModal(app.monthlyShareText(), 'Nhắc Đóng Quỹ Tháng');
+      },
+
       closeFeePeriod() {
         if (!isAdmin) { alert('🔒 Bạn cần đăng nhập Admin để thực hiện!'); return; }
         const mk = activeFeeMonthKey();
@@ -5766,6 +6183,10 @@
         if (!isAdmin) { alert('🔒 Bạn cần đăng nhập Admin để thực hiện!'); return; }
         const r = id ? (state.matchResults || []).find(x => x.id === id) : null;
         const kind = r ? r.kind : (presetKind || 'internal');
+        // Tiền sân: trận đã ghi -> hiện đúng số đã ghi; trận mới -> tích sẵn nếu có tiền sân mặc định.
+        const fieldTx = r ? app.fieldFeeTx(r.id) : null;
+        const fieldChecked = r ? !!fieldTx : Number(state.fieldFee) > 0;
+        const fieldAmount = fieldTx ? fieldTx.amount : (Number(state.fieldFee) || 0);
         const val = v => escapeHtml(v == null ? '' : String(v));
         openModal(`
       <div class="modal-header">
@@ -5817,6 +6238,13 @@
         </label>
         ${r && ((r.teamA || []).length || (r.teamB || []).length) ? '<div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Bỏ chọn để giữ nguyên đội hình đã lưu của trận này.</div>' : ''}
       </div>
+      <div class="form-group">
+        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:500; text-transform:none;">
+          <input type="checkbox" id="rs_field" style="width:auto;" ${fieldChecked ? 'checked' : ''}>
+          <span>Ghi chi tiền sân vào Sổ Thu Chi</span>
+        </label>
+        <input type="number" id="rs_field_amount" min="0" value="${fieldAmount || ''}" placeholder="Số tiền sân (VNĐ)" style="margin-top:6px;">
+      </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" onclick="closeModal()">Hủy</button>
         <button class="btn" onclick="app.saveResult(${r ? `'${r.id}'` : 'null'})">Lưu</button>
@@ -5843,14 +6271,41 @@
         if (document.getElementById('rs_lineup').checked) Object.assign(data, app.voteLineup(kind));
 
         if (!state.matchResults) state.matchResults = [];
+        let saved;
         if (id) {
-          const r = state.matchResults.find(x => x.id === id);
-          if (r) Object.assign(r, data);
+          saved = state.matchResults.find(x => x.id === id);
+          if (saved) Object.assign(saved, data);
         } else {
-          state.matchResults.push(Object.assign({ id: uid('r'), teamA: [], teamB: [] }, data));
+          saved = Object.assign({ id: uid('r'), teamA: [], teamB: [] }, data);
+          state.matchResults.push(saved);
+        }
+        if (saved) {
+          const fieldOn = document.getElementById('rs_field').checked;
+          const fieldAmt = Math.max(0, Number(document.getElementById('rs_field_amount').value) || 0);
+          app.syncFieldFee(saved, fieldOn ? fieldAmt : 0);
         }
         closeModal(); saveData();
         showToast('✅ Đã lưu kết quả trận đấu!');
+      },
+      // Tiền sân của 1 trận = 1 dòng CHI trong sổ, nhận diện bằng monthRef 'field:<id trận>' để không ghi trùng.
+      // amount = 0 -> xoá dòng đó (bỏ tích "Ghi chi tiền sân").
+      fieldFeeTx(resultId) { return state.transactions.find(t => t.monthRef === 'field:' + resultId); },
+      syncFieldFee(r, amount) {
+        const ref = 'field:' + r.id;
+        const idx = state.transactions.findIndex(t => t.monthRef === ref);
+        if (!amount) {
+          if (idx !== -1) state.transactions.splice(idx, 1);
+          return;
+        }
+        const desc = `Tiền sân ${fmtDate(r.date).slice(0, 5)} (${r.kind === 'internal' ? sideVs() : 'vs ' + (r.opponent || 'đội bạn')})`;
+        if (idx !== -1) {
+          Object.assign(state.transactions[idx], { amount, desc, date: r.date });
+        } else {
+          state.transactions.unshift({
+            id: uid('t'), date: r.date, category: 'Tiền sân', desc, type: 'chi', person: '', amount,
+            note: '', monthRef: ref, playerId: '', createdAt: nowStamp()
+          });
+        }
       },
       deleteResult(id) {
         if (!isAdmin) { alert('🔒 Bạn cần đăng nhập Admin để thực hiện!'); return; }
@@ -5866,6 +6321,7 @@
         const b = document.getElementById('settingSideB').value.trim() || 'Trẻ';
         if (a.toLowerCase() === b.toLowerCase()) { alert('Tên 2 đội nội bộ phải khác nhau!'); return; }
         state.teamLabels = { a, b };
+        state.fieldFee = Math.max(0, Number(document.getElementById('settingFieldFee').value) || 0);
         saveData(); alert('Đã lưu cài đặt!');
       },
       exportData() {
@@ -5917,6 +6373,7 @@
           matchResults: state.matchResults || [],
           parties: state.parties || [],
           extraFunds: state.extraFunds || [],
+          fieldFee: Number(state.fieldFee) || 0,
           teamLabels: { a: sideA(), b: sideB() },
           matchVote: state.matchVote,
           cancelledFixedMatches: state.cancelledFixedMatches || [],
@@ -5928,6 +6385,12 @@
         if (!url) { if (!silent) alert('Vui lòng nhập Web App URL trước!'); return; }
         if (!getAdminPass()) {
           if (!silent) alert('🔒 Bạn cần đăng nhập Admin trước khi đẩy dữ liệu lên Sheet.');
+          return;
+        }
+        // Máy này chưa tải được dữ liệu quỹ đầy đủ (VD vừa ở chế độ người xem) -> đẩy lên sẽ xoá
+        // trắng sổ thu chi trên Sheet. Chặn lại, bắt tải về trước.
+        if (!fullDataLoaded) {
+          if (!silent) alert('⚠️ Máy này chưa tải đủ dữ liệu quỹ từ Sheet. Hãy bấm "Tải Từ Sheet" trước rồi mới đẩy lên.');
           return;
         }
         try {
@@ -5973,12 +6436,29 @@
         if (statusEl && !silent) { statusEl.textContent = '⏳ Đang tải dữ liệu từ Sheet...'; statusEl.style.color = 'var(--accent-cyan)'; }
         try {
           const sep = url.includes('?') ? '&' : '?';
+          // Admin gửi kèm mật khẩu để nhận dữ liệu quỹ đầy đủ; người xem chỉ nhận phần công khai.
+          const pass = isAdmin ? getAdminPass() : '';
           const res = await fetchWithTimeout(
-            url + sep + 'token=' + encodeURIComponent(state.sheetSync.token || '') + '&_=' + Date.now()
+            url + sep + 'token=' + encodeURIComponent(state.sheetSync.token || '')
+            + (pass ? '&adminPass=' + encodeURIComponent(pass) : '') + '&_=' + Date.now()
           );
           if (!res.ok) throw new Error('HTTP ' + res.status);
           const data = parseSyncResponse(await res.text());
           if (data.error) throw new Error(data.error);
+          if (data.publicOnly) {
+            // Bản công khai không có dữ liệu quỹ -> xoá luôn bản sao cũ còn trên máy (nếu có),
+            // chỉ giữ danh sách tháng để biết kỳ quỹ đang thu. Đánh dấu chưa có dữ liệu đầy đủ
+            // để tuyệt đối không đẩy trạng thái rỗng này lên Sheet.
+            fullDataLoaded = false;
+            data.monthlyRecords = {};
+            (data.monthKeys || []).forEach(k => { data.monthlyRecords[k] = {}; });
+            data.transactions = [];
+            data.parties = [];
+            data.extraFunds = [];
+          } else {
+            fullDataLoaded = true;
+          }
+          if (data.fieldFee) state.fieldFee = Number(data.fieldFee);
           state.teamName = data.teamName || state.teamName;
           state.defaultFee = data.defaultFee || state.defaultFee;
           state.monthlyFeeConfig = data.monthlyFeeConfig || state.monthlyFeeConfig || {};
@@ -6045,10 +6525,11 @@
           dedupeFeeTransactions();
           normalizeAutoFeeDates();
 
-          if (!data.apiVersion || Number(data.apiVersion) < 7) {
+          if (!data.apiVersion || Number(data.apiVersion) < 8) {
             const ver = Number(data.apiVersion) || 1;
-            console.warn('[FC] Apps Script đang chạy bản cũ (v' + ver + '), chưa có bản v7 hỗ trợ lưu Quỹ Phụ.');
-            const missing = ['Thu quỹ phụ'];
+            console.warn('[FC] Apps Script đang chạy bản cũ (v' + ver + '), chưa có bản v8 bảo mật dữ liệu quỹ.');
+            const missing = ['Bảo mật dữ liệu quỹ với người xem', 'Tiền sân mặc định'];
+            if (ver < 7) missing.push('Thu quỹ phụ');
             if (ver < 6) missing.push('Thu tiền liên hoan', 'Kỳ quỹ đang thu', 'Tên 2 đội nội bộ');
             if (ver < 5) missing.push('Trạng thái tạm nghỉ');
             if (ver < 4) missing.push('Lịch sử trận đấu');
@@ -6125,6 +6606,8 @@
             store.removeItem('fc_is_admin');
             store.removeItem(ADMIN_PASS_SESSION_KEY);
             renderAll();
+            // Tải lại bản công khai -> xoá dữ liệu quỹ khỏi máy này (hữu ích khi dùng máy chung).
+            if (state.sheetSync && state.sheetSync.url) app.pullFromSheet(true);
             alert('Đã chuyển về chế độ Xem (User Mode).');
           }
         } else {
@@ -6210,6 +6693,8 @@
           }
           closeModal();
           renderAll();
+          // Người xem chỉ có dữ liệu công khai -> đăng nhập xong tải lại bản đầy đủ (có sổ quỹ).
+          if (state.sheetSync && state.sheetSync.url) app.pullFromSheet(true);
           alert('✅ Đăng nhập Admin thành công!');
         } catch (e) {
           console.error(e);
