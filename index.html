@@ -402,7 +402,7 @@
     /* HERO BANNER */
     .hero-banner {
       width: 100%;
-      height: 380px;
+      height: 250px;
       border-radius: var(--radius-lg);
       overflow: hidden;
       margin-bottom: 28px;
@@ -566,10 +566,18 @@
       letter-spacing: -0.5px;
     }
 
+    .stat-details .stat-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
     /* DASHBOARD LAYOUT */
     .dashboard-grid {
       display: grid;
-      grid-template-columns: 2fr 1fr;
       gap: 24px;
       margin-bottom: 28px;
     }
@@ -619,33 +627,88 @@
       box-shadow: 0 0 12px var(--accent-emerald-glow);
     }
 
-    /* UNPAID PILLS */
+    /* UNPAID PILLS & MONTH METRICS */
+    .dash-month-metrics {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 12px;
+      margin-bottom: 6px;
+    }
+
+    .dash-month-kpi {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-sm);
+      padding: 8px 10px;
+      text-align: center;
+    }
+
+    .dash-month-kpi .kpi-lbl {
+      display: block;
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 2px;
+    }
+
+    .dash-month-kpi .kpi-val {
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .dash-unpaid-box {
+      margin-top: 14px;
+      background: rgba(0, 0, 0, 0.22);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-md);
+      padding: 10px 12px;
+    }
+
+    .dash-unpaid-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .btn-xs {
+      padding: 3px 8px;
+      font-size: 11px;
+      border-radius: 6px;
+      line-height: 1.4;
+    }
+
     .unpaid-tags {
       display: flex;
       flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 12px;
+      gap: 6px;
+      max-height: 115px;
+      overflow-y: auto;
+      padding-right: 4px;
     }
 
     .unpaid-pill {
       background: rgba(255, 77, 109, 0.1);
       border: 1px solid rgba(255, 77, 109, 0.25);
       color: #ff8599;
-      padding: 6px 12px;
+      padding: 4px 10px;
       border-radius: 99px;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 600;
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
     }
 
     .unpaid-pill .avatar {
-      width: 18px;
-      height: 18px;
+      width: 16px;
+      height: 16px;
       border-radius: 50%;
       background: rgba(255, 77, 109, 0.3);
-      font-size: 10px;
+      font-size: 9px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -1115,6 +1178,31 @@
     /* Chỉ hiện cho người xem (chưa đăng nhập Admin), VD nút Lịch sử / Thành viên ở thanh dưới đáy. */
     body:not(.user-mode) .user-only {
       display: none !important;
+    }
+
+    /* Admin: 2 cột cân bằng 1:1, cột trái: Quản lý quỹ & Thu chi, cột phải: Lịch thi đấu & Kết quả */
+    @media (min-width: 1025px) {
+      body:not(.user-mode) .dashboard-grid {
+        grid-template-columns: 1fr 1fr;
+        grid-template-areas:
+          "month sched"
+          "tx    results";
+        gap: 24px;
+        align-items: start;
+      }
+
+      body:not(.user-mode) .dash-month-card { grid-area: month; }
+      body:not(.user-mode) .dash-sched-card { grid-area: sched; }
+      body:not(.user-mode) .dash-tx-card { grid-area: tx; }
+      body:not(.user-mode) .dash-results-card {
+        grid-area: results;
+        contain: none;
+      }
+      body:not(.user-mode) .dash-results-scroll {
+        max-height: 460px;
+        overflow-y: auto;
+        padding-right: 4px;
+      }
     }
 
     /* Người xem: cột trái = Lịch Thi Đấu + Bảng Vinh Danh, cột phải = Kết Quả nội bộ (cao hết 2 hàng). */
@@ -2246,32 +2334,36 @@
 
         <!-- STATS -->
         <div class="grid-stats admin-only">
-          <div class="glass-card stat-box">
+          <div class="glass-card stat-box" onclick="switchTab('ledger')" style="cursor: pointer;" title="Xem chi tiết sổ thu chi">
             <div class="stat-icon balance"><i class="fa-solid fa-wallet"></i></div>
             <div class="stat-details">
-              <div class="lbl">Số dư quỹ hiện tại</div>
+              <div class="lbl">Số Dư Quỹ Khả Dụng</div>
               <div class="num" id="statBalance" style="color: var(--accent-indigo);">0 ₫</div>
+              <div class="stat-sub" id="statBalanceSub">Thu chi lũy kế</div>
             </div>
           </div>
-          <div class="glass-card stat-box">
+          <div class="glass-card stat-box" onclick="switchTab('monthly')" style="cursor: pointer;" title="Xem chi tiết thu quỹ tháng">
             <div class="stat-icon income"><i class="fa-solid fa-arrow-trend-up"></i></div>
             <div class="stat-details">
-              <div class="lbl">Tổng Quỹ Thu</div>
+              <div class="lbl">Tổng Quỹ Đã Thu</div>
               <div class="num" id="statIncome" style="color: var(--accent-emerald);">0 ₫</div>
+              <div class="stat-sub" id="statIncomeSub">Toàn thời gian</div>
             </div>
           </div>
-          <div class="glass-card stat-box">
+          <div class="glass-card stat-box" onclick="switchTab('ledger')" style="cursor: pointer;" title="Xem chi tiết các khoản chi">
             <div class="stat-icon expense"><i class="fa-solid fa-arrow-trend-down"></i></div>
             <div class="stat-details">
-              <div class="lbl">Tổng Đã Chi</div>
+              <div class="lbl">Tổng Khoản Đã Chi</div>
               <div class="num" id="statExpense" style="color: var(--accent-rose);">0 ₫</div>
+              <div class="stat-sub" id="statExpenseSub">Toàn thời gian</div>
             </div>
           </div>
-          <div class="glass-card stat-box">
+          <div class="glass-card stat-box" onclick="switchTab('players')" style="cursor: pointer;" title="Xem danh sách thành viên">
             <div class="stat-icon players"><i class="fa-solid fa-user-group"></i></div>
             <div class="stat-details">
-              <div class="lbl">Thành Viên</div>
+              <div class="lbl">Quân Số Đội Bóng</div>
               <div class="num" id="statPlayers" style="color: var(--accent-amber);">0</div>
+              <div class="stat-sub" id="statPlayersSub">Cầu thủ chính thức</div>
             </div>
           </div>
         </div>
@@ -2336,24 +2428,39 @@
           </div>
         </div>
 
-        <!-- MAIN GRID: 2 hàng x 2 cột, card cùng hàng tự cao bằng nhau -->
+        <!-- MAIN GRID: 2 cột cân bằng 1:1, nhóm Quỹ/Thu chi (trái) và Lịch đá/Kết quả (phải) -->
         <div class="dashboard-grid">
             <!-- MONTH PROGRESS -->
-            <div class="glass-card admin-only">
+            <div class="glass-card dash-month-card admin-only">
               <div class="card-header">
-                <h3><i class="fa-solid fa-bullseye"></i> Tiến Độ Thu Quỹ Tháng (<span id="dashMonthLabel"></span>)</h3>
-                <span class="badge badge-success" id="dashPercentLabel">0%</span>
+                <h3><i class="fa-solid fa-bullseye"></i> Thu Quỹ Tháng (<span id="dashMonthLabel"></span>)</h3>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                  <span class="badge badge-success" id="dashPercentLabel">0%</span>
+                  <button class="btn btn-secondary btn-sm" onclick="switchTab('monthly')" title="Vào trang đóng quỹ tháng"><i class="fa-solid fa-arrow-up-right-from-square"></i> Quản Lý</button>
+                </div>
               </div>
-              <div style="display: flex; justify-content: space-between; font-size: 13px; color: var(--text-muted);">
-                <span>Đã thu: <b id="dashProgressAmount" style="color: var(--accent-emerald);">0 ₫</b></span>
-                <span id="dashProgressCount">0/0 đã đóng</span>
+              <div class="dash-month-metrics">
+                <div class="dash-month-kpi">
+                  <span class="kpi-lbl">Đã thu</span>
+                  <b class="kpi-val" id="dashProgressAmount" style="color: var(--accent-emerald);">0 ₫</b>
+                </div>
+                <div class="dash-month-kpi">
+                  <span class="kpi-lbl">Tiến độ</span>
+                  <b class="kpi-val" id="dashProgressCount">0/0 đã đóng</b>
+                </div>
+                <div class="dash-month-kpi">
+                  <span class="kpi-lbl">Còn thiếu</span>
+                  <b class="kpi-val" id="dashProgressOwed" style="color: var(--accent-rose);">0 ₫</b>
+                </div>
               </div>
-              <div class="progress-bar-bg">
+              <div class="progress-bar-bg" style="margin: 10px 0 0 0;">
                 <div class="progress-bar-fill" id="dashProgressFill"></div>
               </div>
-              <div style="margin-top: 14px;">
-                <div style="font-size: 12px; color: var(--text-muted); font-weight: 600; margin-bottom: 6px;">Thành viên
-                  chưa đóng tháng này:</div>
+              <div class="dash-unpaid-box">
+                <div class="dash-unpaid-head">
+                  <span><i class="fa-solid fa-clock-rotate-left" style="color: var(--accent-rose);"></i> Chưa đóng tháng này (<span id="dashUnpaidCount">0</span>):</span>
+                  <button class="btn btn-secondary btn-xs" onclick="app.openMonthlyShare()" title="Mở tin nhắn nhắc Zalo"><i class="fa-solid fa-copy"></i> Nhắc Zalo</button>
+                </div>
                 <div class="unpaid-tags" id="dashUnpaidList"></div>
               </div>
             </div>
@@ -2362,16 +2469,12 @@
             <div class="glass-card dash-sched-card">
               <div class="card-header">
                 <h3><i class="fa-solid fa-calendar-days"></i> Lịch Thi Đấu</h3>
-                <div style="display: flex; gap: 6px;">
+                <div style="display: flex; gap: 6px; align-items: center;">
                   <button class="btn btn-secondary btn-sm" onclick="app.openScheduleShare()" title="Copy tin nhắn Zalo nhắc lịch đá"><i
-                      class="fa-solid fa-copy"></i></button>
-                  <button class="btn btn-sm admin-only" onclick="app.openMatchModal()"><i class="fa-solid fa-plus"></i>
-                    Thêm</button>
+                      class="fa-solid fa-share-nodes"></i></button>
+                  <button class="btn btn-secondary btn-sm admin-only" onclick="app.openFixedScheduleModal()" title="Cấu hình lịch cố định"><i class="fa-solid fa-gear"></i> Cấu hình</button>
+                  <button class="btn btn-sm admin-only" onclick="app.openMatchModal()" title="Thêm trận mới"><i class="fa-solid fa-plus"></i> Thêm</button>
                 </div>
-              </div>
-              <div style="margin-bottom: 14px; display: flex; gap: 8px;">
-                <button class="btn btn-secondary btn-sm admin-only" style="width: 100%; justify-content: center;"
-                  onclick="app.openFixedScheduleModal()"><i class="fa-solid fa-gear"></i> Cấu hình lịch cố định</button>
               </div>
               <div id="dashScheduleList"></div>
             </div>
@@ -2380,7 +2483,10 @@
             <div class="glass-card dash-tx-card admin-only">
               <div class="card-header">
                 <h3><i class="fa-solid fa-receipt"></i> Giao Dịch Gần Đây</h3>
-                <button class="btn btn-secondary btn-sm" onclick="switchTab('ledger')">Xem Tất Cả</button>
+                <div style="display: flex; gap: 6px;">
+                  <button class="btn btn-sm" onclick="app.openTxModal()" title="Thêm khoản thu hoặc chi"><i class="fa-solid fa-plus"></i> Thu/Chi</button>
+                  <button class="btn btn-secondary btn-sm" onclick="switchTab('ledger')">Xem Tất Cả</button>
+                </div>
               </div>
               <div class="table-container">
                 <table>
@@ -3556,6 +3662,19 @@
       const label = activeFeeMonthKey();
       document.getElementById('dashMonthLabel').textContent = monthLabel(label);
 
+      // Thống kê thu chi trong tháng hiện tại
+      const ym = label.slice(0, 7);
+      const txMonth = (state.transactions || []).filter(t => (t.date || '').slice(0, 7) === ym);
+      const incMonth = txMonth.filter(t => t.type === 'thu').reduce((s, t) => s + (Number(t.amount) || 0), 0);
+      const expMonth = txMonth.filter(t => t.type === 'chi').reduce((s, t) => s + Math.abs(Number(t.amount) || 0), 0);
+
+      const balSub = document.getElementById('statBalanceSub');
+      if (balSub) balSub.textContent = `Tháng này: +${fmtVND(incMonth)} | -${fmtVND(expMonth)}`;
+      const incSub = document.getElementById('statIncomeSub');
+      if (incSub) incSub.textContent = `Tháng ${label.slice(5, 7)}: +${fmtVND(incMonth)}`;
+      const expSub = document.getElementById('statExpenseSub');
+      if (expSub) expSub.textContent = `Tháng ${label.slice(5, 7)}: -${fmtVND(expMonth)}`;
+
       const rec = state.monthlyRecords[label] || {};
       const hasPaid = p => rec[p.id] && rec[p.id].amount;
       // Người tạm nghỉ không tính vào tiến độ, trừ khi tháng đó họ vẫn đã đóng.
@@ -3569,8 +3688,18 @@
       document.getElementById('dashProgressFill').style.width = pct + '%';
       document.getElementById('dashProgressCount').textContent = `${monthPaidCnt}/${monthList.length} đã đóng`;
 
-      // Unpaid Tags
+      // Unpaid Tags & Owed calculation
       const unpaid = monthList.filter(p => !hasPaid(p));
+      const defFee = Number(state.defaultFee) || 300000;
+      const unpaidOwed = unpaid.reduce((sum, p) => {
+        const paid = Number((rec[p.id] || {}).amount) || 0;
+        return sum + Math.max(0, defFee - paid);
+      }, 0);
+      const owedEl = document.getElementById('dashProgressOwed');
+      if (owedEl) owedEl.textContent = fmtVND(unpaidOwed);
+      const unpaidCntEl = document.getElementById('dashUnpaidCount');
+      if (unpaidCntEl) unpaidCntEl.textContent = unpaid.length;
+
       const unpaidWrap = document.getElementById('dashUnpaidList');
       if (unpaid.length === 0) {
         unpaidWrap.innerHTML = '<span style="font-size:12px; color:var(--accent-emerald);"><i class="fa-solid fa-circle-check"></i> Tất cả đã hoàn tất đóng quỹ!</span>';
