@@ -2814,15 +2814,7 @@
                 </div>
               </div>
 
-              <!-- BENCH & SUBSTITUTES -->
-              <div class="bench-box" id="benchBox" style="display:none;">
-                <div class="bench-title">
-                  <i class="fa-solid fa-chair"></i> CẦU THỦ DỰ BỊ / XOAY TUA (<span id="benchCount">0</span>)
-                </div>
-                <div class="bench-players-row" id="benchPlayersRow">
-                  <!-- Populated by JS -->
-                </div>
-              </div>
+              <!-- Không dùng ghế dự bị: toàn bộ người tham gia luôn được chia đều vào 2 đội. -->
             </div>
 
             <div style="margin-top:14px; font-size:12px; color:var(--text-muted); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
@@ -3204,6 +3196,20 @@
       el.classList.remove('show');
     }
 
+    /* Vote chia đội KHÔNG dùng ghế dự bị: mọi người tham gia đều được chia đều vào 2 đội.
+       Bản trước từng xếp người dư ra ghế dự bị, và dữ liệu đó có thể còn nằm trên máy hoặc
+       trên Google Sheet. Hàm này đưa những người đó về lại 2 đội (vào đội đang ít người hơn)
+       thay vì để họ biến mất khỏi đội hình. Gọi cả khi khởi động lẫn sau khi Tải Từ Sheet. */
+    function mergeBenchIntoTeams() {
+      const t = state && state.matchVote && state.matchVote.teams;
+      if (!t || !Array.isArray(t.bench) || !t.bench.length) return;
+      t.bench.forEach(pid => {
+        if (t.teamOld.length <= t.teamYoung.length) t.teamOld.push(pid);
+        else t.teamYoung.push(pid);
+      });
+      t.bench = [];
+    }
+
     const DEFAULT_DATA = {
       teamName: 'FC Vui Vẻ',
       defaultFee: 300000,
@@ -3276,6 +3282,7 @@
     if (!state.matchVote.teams.teamOld) state.matchVote.teams.teamOld = [];
     if (!state.matchVote.teams.teamYoung) state.matchVote.teams.teamYoung = [];
     if (!state.matchVote.teams.bench) state.matchVote.teams.bench = [];
+    mergeBenchIntoTeams();
     if (!state.matchVote.fieldSize) state.matchVote.fieldSize = 7;
     if (!state.matchVote.matchTitle) state.matchVote.matchTitle = 'Trận Đá Định Kỳ Tuần Này';
 
@@ -5241,26 +5248,18 @@
           });
         });
 
-        // Quá quân so với cỡ sân thì phần dư ngồi ghế dự bị để xoay tua, thay vì nhét hết
-        // vào 2 đội. Người bị đẩy ra là người được phân bổ sau cùng trong thứ tự chiến thuật
-        // (thủ môn & hàng thủ vào trước), nên thủ môn luôn ở lại sân.
-        const bench = [];
-        const maxPerSide = Number(state.matchVote.fieldSize) || 7;
-        while (teamOld.length > maxPerSide) bench.push(teamOld.pop());
-        while (teamYoung.length > maxPerSide) bench.push(teamYoung.pop());
-
+        // Chia đều TOÀN BỘ người tham gia vào 2 đội, không giữ ai lại làm dự bị:
+        // đội bóng muốn ai đi đá cũng được xếp đội, thừa người thì tự xoay tua ngoài sân.
         state.matchVote.teams = {
           teamOld: teamOld,
           teamYoung: teamYoung,
-          bench: bench
+          bench: []
         };
         state.matchVote.splitAt = new Date().toISOString();
         swapSelectedId = null;
         saveData();
         renderVote();
-        showToast(bench.length
-          ? `🎲 Đã chia 2 đội ${maxPerSide} người, ${bench.length} cầu thủ ngồi dự bị xoay tua!`
-          : '🎲 Đã bốc thăm chia 2 đội cân bằng theo vị trí & quân số!');
+        showToast('🎲 Đã bốc thăm chia 2 đội cân bằng theo vị trí & quân số!');
       },
 
       handleSwapClick(playerId) {
@@ -6805,6 +6804,7 @@
           if (!state.matchVote.teams.teamOld) state.matchVote.teams.teamOld = [];
           if (!state.matchVote.teams.teamYoung) state.matchVote.teams.teamYoung = [];
           if (!state.matchVote.teams.bench) state.matchVote.teams.bench = [];
+          mergeBenchIntoTeams();
           if (!state.matchVote.fieldSize) state.matchVote.fieldSize = 7;
           if (!state.matchVote.matchTitle) state.matchVote.matchTitle = 'Trận Đá Định Kỳ Tuần Này';
 
