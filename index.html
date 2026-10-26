@@ -3056,7 +3056,7 @@
             <hr style="border: none; border-top: 1px solid var(--card-border); margin: 24px 0;">
 
             <div class="card-header">
-              <h3><i class="fa-solid fa-database"></i> Dữ Liệu Hống</h3>
+              <h3><i class="fa-solid fa-database"></i> Dữ Liệu Hệ Thống</h3>
             </div>
             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
               <button class="btn btn-secondary" onclick="app.exportData()"><i class="fa-solid fa-download"></i> Xuất
@@ -3207,6 +3207,12 @@
     const DEFAULT_DATA = {
       teamName: 'FC Vui Vẻ',
       defaultFee: 300000,
+      // Tiền sân mặc định mỗi buổi (0 = không dùng), đổi ở tab Cài Đặt.
+      fieldFee: 0,
+      // Tên 2 đội nội bộ dùng cho Vote chia đội & kết quả nội bộ.
+      teamLabels: { a: 'Già', b: 'Trẻ' },
+      // Các buổi đá định kỳ đã bị huỷ, dạng ["YYYY-MM-DD"].
+      cancelledFixedMatches: [],
       categories: [
         { id: 'full', name: 'Đi làm (100%)', percent: 100 },
         { id: 'half_gk', name: 'Thủ môn (Giảm 50%)', percent: 50 },
@@ -3253,6 +3259,15 @@
     if (!state.parties) state.parties = [];
     if (!state.extraFunds) state.extraFunds = [];
     if (!state.cancelledFixedMatches) state.cancelledFixedMatches = [];
+    // Hai trường thêm sau: máy đã lưu dữ liệu từ bản cũ sẽ không có, phải bù mặc định
+    // nếu không tiền sân và tên 2 đội sẽ là undefined cho tới khi lưu Cài Đặt hoặc Tải Từ Sheet.
+    if (typeof state.fieldFee !== 'number') state.fieldFee = Number(state.fieldFee) || 0;
+    if (!state.teamLabels || !state.teamLabels.a || !state.teamLabels.b) {
+      state.teamLabels = {
+        a: (state.teamLabels && state.teamLabels.a) || DEFAULT_DATA.teamLabels.a,
+        b: (state.teamLabels && state.teamLabels.b) || DEFAULT_DATA.teamLabels.b
+      };
+    }
     if (!state.sheetSync) state.sheetSync = JSON.parse(JSON.stringify(DEFAULT_DATA.sheetSync));
     if (!state.matchVote) state.matchVote = JSON.parse(JSON.stringify(DEFAULT_DATA.matchVote));
     if (!state.matchVote.attendees) state.matchVote.attendees = {};
@@ -5226,16 +5241,26 @@
           });
         });
 
+        // Quá quân so với cỡ sân thì phần dư ngồi ghế dự bị để xoay tua, thay vì nhét hết
+        // vào 2 đội. Người bị đẩy ra là người được phân bổ sau cùng trong thứ tự chiến thuật
+        // (thủ môn & hàng thủ vào trước), nên thủ môn luôn ở lại sân.
+        const bench = [];
+        const maxPerSide = Number(state.matchVote.fieldSize) || 7;
+        while (teamOld.length > maxPerSide) bench.push(teamOld.pop());
+        while (teamYoung.length > maxPerSide) bench.push(teamYoung.pop());
+
         state.matchVote.teams = {
           teamOld: teamOld,
           teamYoung: teamYoung,
-          bench: []
+          bench: bench
         };
         state.matchVote.splitAt = new Date().toISOString();
         swapSelectedId = null;
         saveData();
         renderVote();
-        showToast('🎲 Đã bốc thăm chia 2 đội cân bằng theo vị trí & quân số!');
+        showToast(bench.length
+          ? `🎲 Đã chia 2 đội ${maxPerSide} người, ${bench.length} cầu thủ ngồi dự bị xoay tua!`
+          : '🎲 Đã bốc thăm chia 2 đội cân bằng theo vị trí & quân số!');
       },
 
       handleSwapClick(playerId) {
@@ -6719,7 +6744,10 @@
           } else {
             fullDataLoaded = true;
           }
-          if (data.fieldFee) state.fieldFee = Number(data.fieldFee);
+          // Phải so với undefined chứ không dùng if (data.fieldFee): đặt tiền sân về 0 là
+          // giá trị hợp lệ (tắt ghi chi tiền sân), nếu kiểm tra kiểu cũ thì máy khác không
+          // nhận được thay đổi đó. Người xem không được trả fieldFee -> giữ nguyên trên máy.
+          if (data.fieldFee !== undefined) state.fieldFee = Number(data.fieldFee) || 0;
           state.teamName = data.teamName || state.teamName;
           state.defaultFee = data.defaultFee || state.defaultFee;
           state.monthlyFeeConfig = data.monthlyFeeConfig || state.monthlyFeeConfig || {};
@@ -6786,10 +6814,11 @@
           dedupeFeeTransactions();
           normalizeAutoFeeDates();
 
-          if (!data.apiVersion || Number(data.apiVersion) < 8) {
+          if (!data.apiVersion || Number(data.apiVersion) < 9) {
             const ver = Number(data.apiVersion) || 1;
-            console.warn('[FC] Apps Script đang chạy bản cũ (v' + ver + '), chưa có bản v8 bảo mật dữ liệu quỹ.');
-            const missing = ['Bảo mật dữ liệu quỹ với người xem', 'Tiền sân mặc định'];
+            console.warn('[FC] Apps Script đang chạy bản cũ (v' + ver + '), chưa có bản v9 lưu buổi đá đã huỷ.');
+            const missing = ['Huỷ buổi đá định kỳ'];
+            if (ver < 8) missing.push('Bảo mật dữ liệu quỹ với người xem', 'Tiền sân mặc định');
             if (ver < 7) missing.push('Thu quỹ phụ');
             if (ver < 6) missing.push('Thu tiền liên hoan', 'Kỳ quỹ đang thu', 'Tên 2 đội nội bộ');
             if (ver < 5) missing.push('Trạng thái tạm nghỉ');
