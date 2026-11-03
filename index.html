@@ -2082,6 +2082,115 @@
       gap: 6px;
     }
 
+    /* ====== BẢNG XẾP ĐỘI HÌNH (kéo thả cầu thủ lên sân) ======
+       Sân vẽ bằng CSS, cầu thủ là thẻ đặt theo toạ độ % nên co giãn đúng ở mọi khổ màn hình.
+       Dùng Pointer Events nên kéo được bằng cả chuột lẫn ngón tay. */
+    .lineup-board {
+      margin-top: 18px;
+      background: rgba(13, 20, 35, 0.7);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-md);
+      padding: 14px 16px 16px;
+    }
+    .lineup-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 10px; flex-wrap: wrap; margin-bottom: 12px;
+    }
+    .lineup-team-switch { display: flex; gap: 6px; background: rgba(0,0,0,0.3); padding: 4px; border-radius: 999px; }
+    .lineup-tab {
+      border: none; background: transparent; color: var(--text-muted); cursor: pointer;
+      font-family: var(--font); font-size: 12px; font-weight: 700; padding: 6px 14px; border-radius: 999px;
+      transition: all 0.2s ease; white-space: nowrap;
+    }
+    .lineup-tab.active { background: var(--accent-emerald); color: #04231a; }
+    .lineup-tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .lineup-tools select {
+      background: rgba(13,20,35,0.9); color: #fff; border: 1px solid var(--card-border);
+      border-radius: var(--radius-sm); padding: 7px 10px; font-family: var(--font); font-size: 12px; font-weight: 600;
+    }
+    .lineup-pitch-wrap { position: relative; width: 100%; max-width: 480px; margin: 0 auto; }
+    .lineup-pitch-wrap::before { content: ''; display: block; padding-top: 142%; }
+    .lineup-pitch {
+      position: absolute; inset: 0; overflow: hidden;
+      border: 2px solid rgba(255,255,255,0.22); border-radius: 10px;
+      background:
+        repeating-linear-gradient(to bottom, rgba(255,255,255,0.035) 0 6%, rgba(0,0,0,0) 6% 12%),
+        linear-gradient(to bottom, #11462b 0%, #0c3520 100%);
+      background-color: #0e3d26;
+      box-shadow: inset 0 0 50px rgba(0,0,0,0.55);
+    }
+    /* Vạch giữa sân + vòng tròn giữa */
+    .lineup-pitch::before {
+      content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 2px;
+      background: rgba(255,255,255,0.22);
+    }
+    .lineup-pitch::after {
+      content: ''; position: absolute; left: 50%; top: 50%;
+      width: 30%; aspect-ratio: 1 / 1; border: 2px solid rgba(255,255,255,0.22);
+      border-radius: 50%; transform: translate(-50%, -50%);
+    }
+    /* Vòng cấm 2 đầu sân */
+    .lu-box {
+      position: absolute; left: 50%; transform: translateX(-50%);
+      width: 52%; height: 13%; border: 2px solid rgba(255,255,255,0.2);
+    }
+    .lu-box.top { top: 0; border-top: none; }
+    .lu-box.bottom { bottom: 0; border-bottom: none; }
+    .lu-goal {
+      position: absolute; left: 50%; transform: translateX(-50%);
+      width: 24%; height: 3.2%; border: 2px solid rgba(255,255,255,0.35); background: rgba(255,255,255,0.06);
+    }
+    .lu-goal.top { top: 0; } .lu-goal.bottom { bottom: 0; }
+    /* Thẻ cầu thủ trên sân */
+    .lu-chip {
+      position: absolute; width: 58px; margin-left: -29px; margin-top: -26px;
+      text-align: center; cursor: grab; touch-action: none; user-select: none; z-index: 3;
+    }
+    .lu-chip:active { cursor: grabbing; }
+    .lu-dot {
+      width: 36px; height: 36px; margin: 0 auto; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px; background: rgba(8, 20, 14, 0.9);
+      box-shadow: 0 3px 10px rgba(0,0,0,0.55);
+    }
+    .lu-label {
+      margin-top: 3px; font-size: 9.5px; font-weight: 700; color: #fff; line-height: 1.15;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+      overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    }
+    /* Khu dự bị */
+    .lineup-subs {
+      margin-top: 14px; background: rgba(13, 20, 35, 0.7);
+      border: 1px dashed rgba(255, 183, 3, 0.45); border-radius: var(--radius-md); padding: 10px 14px;
+      min-height: 64px;
+    }
+    .lineup-subs.lu-drop-active { border-color: var(--accent-amber); background: rgba(255,183,3,0.08); }
+    .lineup-subs-title {
+      font-size: 11px; font-weight: 800; color: var(--accent-amber);
+      display: flex; align-items: center; gap: 6px; margin-bottom: 8px; letter-spacing: 0.4px;
+    }
+    .lineup-subs-row { display: flex; flex-wrap: wrap; gap: 8px; }
+    .lu-sub {
+      display: inline-flex; align-items: center; gap: 6px; cursor: grab; touch-action: none; user-select: none;
+      background: rgba(255, 183, 3, 0.1); border: 1px solid rgba(255, 183, 3, 0.3);
+      color: #fff; padding: 5px 11px; border-radius: 20px; font-size: 12px; font-weight: 600;
+    }
+    .lu-sub:active { cursor: grabbing; }
+    .lu-empty { font-size: 12px; color: var(--text-muted); font-style: italic; }
+    /* Bản sao bay theo ngón tay khi kéo */
+    .lu-ghost {
+      position: fixed; z-index: 9999; pointer-events: none; opacity: 0.92;
+      transform: translate(-50%, -50%) scale(1.08); filter: drop-shadow(0 8px 16px rgba(0,0,0,0.6));
+      width: auto; margin: 0;
+    }
+    .lu-dragging { opacity: 0.25; }
+    .lineup-hint { margin-top: 10px; font-size: 11.5px; color: var(--text-muted); line-height: 1.5; }
+    @media (max-width: 480px) {
+      .lineup-board { padding: 12px 10px 14px; }
+      .lu-chip { width: 52px; margin-left: -26px; }
+      .lu-dot { width: 32px; height: 32px; font-size: 14px; }
+    }
+
     /* TOAST NOTIFICATION */
     .toast-msg {
       position: fixed;
@@ -2815,6 +2924,47 @@
               </div>
 
               <!-- Không dùng ghế dự bị: toàn bộ người tham gia luôn được chia đều vào 2 đội. -->
+            </div>
+
+            <!-- XẾP ĐỘI HÌNH: kéo thả cầu thủ lên sân, ai không lên sân thì nằm ở khu dự bị -->
+            <div class="lineup-board" id="lineupBoard">
+              <div class="lineup-bar">
+                <div class="lineup-team-switch" id="lineupTeamSwitch">
+                  <button type="button" class="lineup-tab active" id="lineupTabOld" onclick="app.switchLineupTeam('teamOld')">ĐỘI GIÀ</button>
+                  <button type="button" class="lineup-tab" id="lineupTabYoung" onclick="app.switchLineupTeam('teamYoung')">ĐỘI TRẺ</button>
+                </div>
+                <div class="lineup-tools">
+                  <select id="lineupFormation" class="admin-input" onchange="app.changeLineupFormation(this.value)" title="Chọn sơ đồ chiến thuật"></select>
+                  <button type="button" class="btn btn-secondary btn-sm admin-only" onclick="app.autoArrangeActiveLineup()" title="Tự xếp theo sơ đồ đang chọn">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Xếp Tự Động
+                  </button>
+                  <button type="button" class="btn btn-secondary btn-sm admin-only" onclick="app.clearActiveLineup()" title="Đưa tất cả xuống khu dự bị">
+                    <i class="fa-solid fa-eraser"></i> Dọn Sân
+                  </button>
+                </div>
+              </div>
+
+              <div class="lineup-pitch-wrap">
+                <div class="lineup-pitch" id="lineupPitch">
+                  <div class="lu-box top"></div>
+                  <div class="lu-goal top"></div>
+                  <div class="lu-box bottom"></div>
+                  <div class="lu-goal bottom"></div>
+                  <!-- Thẻ cầu thủ do JS đặt vào -->
+                </div>
+              </div>
+
+              <div class="lineup-subs" id="lineupSubs">
+                <div class="lineup-subs-title">
+                  <i class="fa-solid fa-chair"></i> <span id="lineupSubsTitleText">DỰ BỊ</span>
+                </div>
+                <div class="lineup-subs-row" id="lineupSubsRow"></div>
+              </div>
+
+              <div class="lineup-hint admin-only">
+                <i class="fa-solid fa-hand-pointer" style="color:var(--accent-cyan);"></i>
+                Kéo thả cầu thủ để đổi chỗ trên sân. Kéo xuống khu dự bị để cho ra nghỉ, kéo từ dự bị lên sân để cho vào đá.
+              </div>
             </div>
 
             <div style="margin-top:14px; font-size:12px; color:var(--text-muted); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
@@ -4385,6 +4535,7 @@
       renderVotePlayerList();
       renderVoteGuestList();
       renderVotePitchTeams();
+      renderLineup();
     }
 
     function renderVotePlayerList() {
@@ -4499,6 +4650,303 @@
       }
       const defPos = positionById('any');
       return { id: id, name: 'Cầu thủ #' + String(id).slice(-4), isGuest: false, isGk: false, position: 'any', posObj: defPos };
+    }
+
+
+    /* ================== XẾP ĐỘI HÌNH TRÊN SÂN ==================
+       Dữ liệu nằm trong state.matchVote.lineup nên tự đồng bộ lên Google Sheet cùng
+       matchVote, không cần sửa Apps Script:
+         lineup = { teamOld: { formation: '2-3-1', pos: { <id cầu thủ>: {x, y} } }, teamYoung: {...} }
+       x, y là phần trăm chiều rộng/chiều cao sân (0-100) nên đội hình giữ nguyên bố cục
+       ở mọi khổ màn hình. Ai thuộc đội mà không có trong pos thì đang ở khu dự bị. */
+
+    // Sơ đồ gợi ý theo số cầu thủ ngoài sân (không tính thủ môn).
+    const LINEUP_FORMATIONS = {
+      3: [['1-1-1', [1, 1, 1]], ['2-1', [2, 1]], ['1-2', [1, 2]]],
+      4: [['1-2-1', [1, 2, 1]], ['2-2', [2, 2]], ['2-1-1', [2, 1, 1]]],
+      5: [['2-2-1', [2, 2, 1]], ['1-3-1', [1, 3, 1]], ['2-1-2', [2, 1, 2]]],
+      6: [['2-3-1', [2, 3, 1]], ['3-2-1', [3, 2, 1]], ['2-2-2', [2, 2, 2]], ['3-1-2', [3, 1, 2]]],
+      7: [['3-3-1', [3, 3, 1]], ['2-3-2', [2, 3, 2]], ['3-2-2', [3, 2, 2]]],
+      8: [['3-3-2', [3, 3, 2]], ['3-4-1', [3, 4, 1]], ['4-3-1', [4, 3, 1]]],
+      10: [['4-4-2', [4, 4, 2]], ['4-3-3', [4, 3, 3]], ['3-5-2', [3, 5, 2]], ['4-2-3-1', [4, 2, 3, 1]]]
+    };
+
+    // Cỡ sân lạ (VD sân 6, sân 10) thì tự chia đều thành 3 tuyến.
+    function lineupFormationsFor(outfield) {
+      if (LINEUP_FORMATIONS[outfield]) return LINEUP_FORMATIONS[outfield];
+      if (outfield <= 0) return [['0', []]];
+      if (outfield <= 2) return [[String(outfield), [outfield]]];
+      const def = Math.ceil(outfield / 3);
+      const att = Math.floor(outfield / 3);
+      const mid = outfield - def - att;
+      const rows = [def, mid, att].filter(n => n > 0);
+      return [[rows.join('-'), rows]];
+    }
+
+    // Toạ độ các ô đứng: thủ môn sát khung nhà, rồi hàng thủ -> tiền đạo tiến dần lên.
+    // Mỗi ô còn ghi rõ nó HỢP nhất với vị trí nào (primary) và tạm được với vị trí nào
+    // (secondary), để xếp người đúng sở trường thay vì rót bừa theo thứ tự.
+    // Ô ngoài cùng của một hàng từ 3 người trở lên là ô BIÊN, dành cho Cánh.
+    function lineupSlots(rows) {
+      const slots = [{ x: 50, y: 92, band: 'gk', primary: 'gk', secondary: [] }];
+      const R = rows.length;
+      rows.forEach((n, i) => {
+        const y = R === 1 ? 50 : 78 - i * (58 / (R - 1));
+        const band = (R > 1 && i === 0) ? 'def' : (R > 1 && i === R - 1) ? 'att' : 'mid';
+        for (let j = 0; j < n; j++) {
+          const wide = n >= 3 && (j === 0 || j === n - 1);
+          let primary, secondary;
+          if (band === 'def') {
+            primary = wide ? 'wb' : 'cb';
+            secondary = wide ? ['cb', 'cm'] : ['wb', 'cm'];
+          } else if (band === 'att') {
+            primary = wide ? 'wb' : 'st';
+            secondary = wide ? ['st', 'cm'] : ['cm', 'wb'];
+          } else {
+            primary = wide ? 'wb' : 'cm';
+            secondary = wide ? ['cm', 'st', 'cb'] : ['wb', 'st', 'cb'];
+          }
+          slots.push({
+            x: Math.round((j + 1) * 1000 / (n + 1)) / 10,
+            y: Math.round(y * 10) / 10,
+            band: band, primary: primary, secondary: secondary
+          });
+        }
+      });
+      return slots;
+    }
+
+    /* Chấm điểm độ hợp giữa 1 ô đứng và 1 cầu thủ. Điểm càng cao càng đúng sở trường.
+       - Đúng ý vị trí của ô            -> 100
+       - Vị trí tạm thay thế được       -> 70 / 60 / 50 theo thứ tự ưu tiên
+       - Cầu thủ "Tự do"                -> 50, đắp vào đâu cũng được
+       - Thủ môn bị đẩy ra ngoài sân    -> 5, chỉ dùng khi không còn ai khác
+       - Người ngoài đạo vào bắt gôn    -> 10, cũng chỉ khi bị ép */
+    function lineupFitScore(slot, playerPos) {
+      if (slot.band === 'gk') {
+        if (playerPos === 'gk') return 100;
+        return playerPos === 'any' ? 40 : 10;
+      }
+      if (playerPos === 'gk') return 5;
+      if (playerPos === slot.primary) return 100;
+      const i = slot.secondary.indexOf(playerPos);
+      if (i !== -1) return 70 - i * 10;
+      if (playerPos === 'any') return 50;
+      return 20;
+    }
+
+    let lineupActiveTeam = 'teamOld';
+    let lineupDrag = null;
+    let lineupBound = false;
+
+    function lineupFieldSize() { return Math.max(1, Number(state.matchVote && state.matchVote.fieldSize) || 7); }
+
+    function getLineup(teamKey) {
+      if (!state.matchVote.lineup) state.matchVote.lineup = {};
+      const lu = state.matchVote.lineup;
+      if (!lu[teamKey] || typeof lu[teamKey] !== 'object') lu[teamKey] = { formation: '', pos: {} };
+      if (!lu[teamKey].pos || typeof lu[teamKey].pos !== 'object') lu[teamKey].pos = {};
+      return lu[teamKey];
+    }
+
+    // Bỏ khỏi sân những người không còn thuộc đội đó (VD vừa hoán đổi sang đội kia,
+    // hoặc vừa chia lại đội), để sân không hiện người lạ.
+    function pruneLineup() {
+      const teams = state.matchVote.teams || {};
+      ['teamOld', 'teamYoung'].forEach(k => {
+        const lu = getLineup(k);
+        const ids = teams[k] || [];
+        Object.keys(lu.pos).forEach(pid => { if (ids.indexOf(pid) === -1) delete lu.pos[pid]; });
+      });
+    }
+
+    function lineupFormationRows(teamKey) {
+      const lu = getLineup(teamKey);
+      const forms = lineupFormationsFor(lineupFieldSize() - 1);
+      let found = forms.find(f => f[0] === lu.formation);
+      if (!found) { found = forms[0]; lu.formation = found[0]; }
+      return found[1];
+    }
+
+    /* Xếp tự động theo SỞ TRƯỜNG từng người.
+       Cách làm: chấm điểm cho mọi cặp (ô đứng, cầu thủ), rồi ghép cặp điểm cao trước.
+       Nhờ vậy Thủ môn vào khung, Thòng về hàng thủ, Cánh ra biên, Giữa vào giữa,
+       Tiền đạo lên trên. Bản cũ rót lần lượt nên 4 Cánh chiếm hết cả tuyến giữa lẫn
+       ô tiền đạo, còn Giữa và Tiền đạo thật lại phải ngồi ngoài.
+       Ai không ghép được ô nào (đội đông hơn cỡ sân) thì xuống khu dự bị. */
+    function autoArrangeLineup(teamKey) {
+      const lu = getLineup(teamKey);
+      const slots = lineupSlots(lineupFormationRows(teamKey));
+      const people = ((state.matchVote.teams || {})[teamKey] || [])
+        .map(resolveParticipant).filter(Boolean);
+
+      const pairs = [];
+      slots.forEach((slot, si) => people.forEach((p, pi) => {
+        // Cộng chút ngẫu nhiên để những người hợp ngang nhau được luân phiên. Mức cộng
+        // nhỏ hơn khoảng cách giữa 2 bậc điểm nên không làm sai thứ tự ưu tiên.
+        pairs.push({ si: si, pi: pi, score: lineupFitScore(slot, p.position) + Math.random() * 0.9 });
+      }));
+      pairs.sort((a, b) => b.score - a.score);
+
+      const usedSlot = {}, usedPlayer = {};
+      lu.pos = {};
+      pairs.forEach(pr => {
+        if (usedSlot[pr.si] || usedPlayer[pr.pi]) return;
+        usedSlot[pr.si] = true;
+        usedPlayer[pr.pi] = true;
+        lu.pos[people[pr.pi].id] = { x: slots[pr.si].x, y: slots[pr.si].y };
+      });
+    }
+
+    function renderLineup() {
+      const pitch = document.getElementById('lineupPitch');
+      const subsRow = document.getElementById('lineupSubsRow');
+      if (!pitch || !subsRow) return;
+
+      if (lineupActiveTeam !== 'teamOld' && lineupActiveTeam !== 'teamYoung') lineupActiveTeam = 'teamOld';
+      pruneLineup();
+
+      const tabOld = document.getElementById('lineupTabOld');
+      const tabYoung = document.getElementById('lineupTabYoung');
+      if (tabOld) { tabOld.textContent = 'ĐỘI ' + sideA().toUpperCase(); tabOld.classList.toggle('active', lineupActiveTeam === 'teamOld'); }
+      if (tabYoung) { tabYoung.textContent = 'ĐỘI ' + sideB().toUpperCase(); tabYoung.classList.toggle('active', lineupActiveTeam === 'teamYoung'); }
+
+      const teamKey = lineupActiveTeam;
+      const lu = getLineup(teamKey);
+      lineupFormationRows(teamKey); // chuẩn hoá lu.formation theo cỡ sân hiện tại
+
+      const select = document.getElementById('lineupFormation');
+      if (select) {
+        const forms = lineupFormationsFor(lineupFieldSize() - 1);
+        select.innerHTML = forms.map(f =>
+          '<option value="' + escapeAttr(f[0]) + '"' + (f[0] === lu.formation ? ' selected' : '') + '>Sơ đồ ' + escapeHtml(f[0]) + '</option>').join('');
+      }
+
+      const ids = (state.matchVote.teams || {})[teamKey] || [];
+      const onPitch = [], subs = [];
+      ids.map(resolveParticipant).filter(Boolean).forEach(p => (lu.pos[p.id] ? onPitch : subs).push(p));
+
+      // Vẽ người trên sân
+      pitch.querySelectorAll('.lu-chip').forEach(el => el.remove());
+      onPitch.forEach(p => {
+        const at = lu.pos[p.id];
+        const pos = p.posObj || positionById(p.position);
+        const el = document.createElement('div');
+        el.className = 'lu-chip';
+        el.dataset.pid = p.id;
+        el.dataset.lteam = teamKey;
+        el.style.left = at.x + '%';
+        el.style.top = at.y + '%';
+        el.innerHTML =
+          '<div class="lu-dot" style="border:2px solid ' + pos.color + '; background:' + pos.bg + ';">' + pos.emoji + '</div>' +
+          '<div class="lu-label">' + escapeHtml(p.name) + '</div>';
+        pitch.appendChild(el);
+      });
+
+      // Vẽ khu dự bị
+      const titleText = document.getElementById('lineupSubsTitleText');
+      if (titleText) titleText.textContent = 'DỰ BỊ (' + subs.length + ') · TRÊN SÂN ' + onPitch.length + '/' + lineupFieldSize();
+      subsRow.innerHTML = subs.length
+        ? subs.map(p => {
+          const pos = p.posObj || positionById(p.position);
+          return '<div class="lu-sub" data-pid="' + escapeAttr(p.id) + '" data-lteam="' + escapeAttr(teamKey) + '">' +
+            '<span class="pos-badge" style="color:' + pos.color + '; background:' + pos.bg + '; border:1px solid ' + pos.border + '; font-size:9px; padding:0 4px;">' + pos.emoji + ' ' + pos.short + '</span>' +
+            '<span>' + escapeHtml(p.name) + '</span></div>';
+        }).join('')
+        : '<span class="lu-empty">Không còn ai ngồi ngoài, cả đội đang ở trên sân.</span>';
+
+      bindLineupDrag();
+    }
+
+    /* Kéo thả bằng Pointer Events: chạy được cả chuột lẫn ngón tay, không cần thư viện.
+       Gắn 1 lần duy nhất ở cấp document, vì thẻ cầu thủ được vẽ lại sau mỗi thao tác. */
+    function bindLineupDrag() {
+      if (lineupBound) return;
+      lineupBound = true;
+      document.addEventListener('pointerdown', onLineupPointerDown);
+    }
+
+    function onLineupPointerDown(e) {
+      if (e.button !== undefined && e.button !== 0) return;
+      const el = e.target && e.target.closest ? e.target.closest('.lu-chip, .lu-sub') : null;
+      if (!el) return;
+      if (!isAdmin) { alert('🔒 Bạn cần đăng nhập Admin để xếp đội hình!'); return; }
+      e.preventDefault();
+
+      const rect = el.getBoundingClientRect();
+      const ghost = el.cloneNode(true);
+      ghost.className = (el.classList.contains('lu-chip') ? 'lu-chip ' : 'lu-sub ') + 'lu-ghost';
+      ghost.style.left = e.clientX + 'px';
+      ghost.style.top = e.clientY + 'px';
+      ghost.style.width = rect.width + 'px';
+      document.body.appendChild(ghost);
+      el.classList.add('lu-dragging');
+
+      lineupDrag = { pid: el.dataset.pid, teamKey: el.dataset.lteam, ghost: ghost, source: el };
+      window.addEventListener('pointermove', onLineupPointerMove);
+      window.addEventListener('pointerup', onLineupPointerUp);
+      window.addEventListener('pointercancel', onLineupPointerCancel);
+    }
+
+    function lineupHitTest(el, x, y) {
+      if (!el) return false;
+      const r = el.getBoundingClientRect();
+      return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+    }
+
+    function onLineupPointerMove(e) {
+      if (!lineupDrag) return;
+      e.preventDefault();
+      lineupDrag.ghost.style.left = e.clientX + 'px';
+      lineupDrag.ghost.style.top = e.clientY + 'px';
+      const subs = document.getElementById('lineupSubs');
+      if (subs) subs.classList.toggle('lu-drop-active', lineupHitTest(subs, e.clientX, e.clientY));
+    }
+
+    function endLineupDrag() {
+      if (!lineupDrag) return;
+      if (lineupDrag.ghost && lineupDrag.ghost.parentNode) lineupDrag.ghost.parentNode.removeChild(lineupDrag.ghost);
+      if (lineupDrag.source) lineupDrag.source.classList.remove('lu-dragging');
+      const subs = document.getElementById('lineupSubs');
+      if (subs) subs.classList.remove('lu-drop-active');
+      lineupDrag = null;
+      window.removeEventListener('pointermove', onLineupPointerMove);
+      window.removeEventListener('pointerup', onLineupPointerUp);
+      window.removeEventListener('pointercancel', onLineupPointerCancel);
+    }
+
+    function onLineupPointerCancel() { endLineupDrag(); }
+
+    function onLineupPointerUp(e) {
+      if (!lineupDrag) return;
+      const drag = lineupDrag;
+      const pitch = document.getElementById('lineupPitch');
+      const subs = document.getElementById('lineupSubs');
+      const x = e.clientX, y = e.clientY;
+      endLineupDrag();
+
+      const lu = getLineup(drag.teamKey);
+      const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+      if (pitch && lineupHitTest(pitch, x, y)) {
+        const max = lineupFieldSize();
+        if (!lu.pos[drag.pid] && Object.keys(lu.pos).length >= max) {
+          showToast('⚠️ Sân chỉ xếp được ' + max + ' người. Hãy kéo bớt 1 người xuống dự bị trước!');
+          return;
+        }
+        const r = pitch.getBoundingClientRect();
+        lu.pos[drag.pid] = {
+          x: Math.round(clamp((x - r.left) / r.width * 100, 6, 94) * 10) / 10,
+          y: Math.round(clamp((y - r.top) / r.height * 100, 5, 95) * 10) / 10
+        };
+        saveData();
+        renderLineup();
+      } else if (subs && lineupHitTest(subs, x, y)) {
+        if (!lu.pos[drag.pid]) return;
+        delete lu.pos[drag.pid];
+        saveData();
+        renderLineup();
+      }
     }
 
     function renderVotePitchTeams() {
@@ -5115,6 +5563,9 @@
       changeVoteFieldSize(newSize) {
         if (!isAdmin) { alert('🔒 Bạn cần đăng nhập Admin để thay đổi quy mô sân!'); renderVote(); return; }
         state.matchVote.fieldSize = parseInt(newSize, 10) || 7;
+        // Doi co san thi so o dung tren san cung doi theo -> xep lai cho khop so do moi.
+        if (((state.matchVote.teams || {}).teamOld || []).length) autoArrangeLineup('teamOld');
+        if (((state.matchVote.teams || {}).teamYoung || []).length) autoArrangeLineup('teamYoung');
         saveData();
         renderVote();
         showToast(`Đã chuyển quy mô chuẩn sang Sân ${state.matchVote.fieldSize}`);
@@ -5256,6 +5707,9 @@
           bench: []
         };
         state.matchVote.splitAt = new Date().toISOString();
+        // Chia doi xong thi xep luon doi hinh goi y cho ca 2 doi, de ban chi can keo chinh lai.
+        autoArrangeLineup('teamOld');
+        autoArrangeLineup('teamYoung');
         swapSelectedId = null;
         saveData();
         renderVote();
@@ -5313,6 +5767,38 @@
         const btnCancel = document.getElementById('btnCancelSwap');
         if (btnCancel) btnCancel.style.display = 'none';
         renderVotePitchTeams();
+      },
+
+      // ----- Bang xep doi hinh -----
+      switchLineupTeam(teamKey) {
+        if (teamKey !== 'teamOld' && teamKey !== 'teamYoung') return;
+        lineupActiveTeam = teamKey;
+        renderLineup();
+      },
+      changeLineupFormation(value) {
+        if (!isAdmin) { alert('\uD83D\uDD12 B\u1EA1n c\u1EA7n \u0111\u0103ng nh\u1EADp Admin \u0111\u1EC3 \u0111\u1ED5i s\u01A1 \u0111\u1ED3!'); return; }
+        const lu = getLineup(lineupActiveTeam);
+        lu.formation = String(value || '');
+        autoArrangeLineup(lineupActiveTeam);
+        saveData();
+        renderLineup();
+        showToast('\uD83D\uDCD0 \u0110\u00E3 x\u1EBFp l\u1EA1i theo s\u01A1 \u0111\u1ED3 ' + lu.formation + '!');
+      },
+      autoArrangeActiveLineup() {
+        if (!isAdmin) { alert('\uD83D\uDD12 B\u1EA1n c\u1EA7n \u0111\u0103ng nh\u1EADp Admin \u0111\u1EC3 x\u1EBFp \u0111\u1ED9i h\u00ECnh!'); return; }
+        const ids = (state.matchVote.teams || {})[lineupActiveTeam] || [];
+        if (!ids.length) { alert('\u0110\u1ED9i n\u00E0y ch\u01B0a c\u00F3 ai. H\u00E3y b\u1ED1c th\u0103m chia \u0111\u1ED9i tr\u01B0\u1EDBc!'); return; }
+        autoArrangeLineup(lineupActiveTeam);
+        saveData();
+        renderLineup();
+        showToast('\u2728 \u0110\u00E3 t\u1EF1 x\u1EBFp \u0111\u1ED9i h\u00ECnh theo v\u1ECB tr\u00ED c\u1EA7u th\u1EE7!');
+      },
+      clearActiveLineup() {
+        if (!isAdmin) { alert('\uD83D\uDD12 B\u1EA1n c\u1EA7n \u0111\u0103ng nh\u1EADp Admin \u0111\u1EC3 x\u1EBFp \u0111\u1ED9i h\u00ECnh!'); return; }
+        getLineup(lineupActiveTeam).pos = {};
+        saveData();
+        renderLineup();
+        showToast('\uD83E\uDDF9 \u0110\u00E3 \u0111\u01B0a c\u1EA3 \u0111\u1ED9i xu\u1ED1ng khu d\u1EF1 b\u1ECB.');
       },
 
       copyVoteTeamsToClipboard() {
